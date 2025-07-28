@@ -12,7 +12,7 @@ import {
 } from '../types/quote';
 
 export class QuoteService {
-  private readonly baseUrl = 'https://api.1inch.io/v5.0';
+  private readonly baseUrl = 'https://api.1inch.dev';
   private readonly apiKey: string;
   
   constructor() {
@@ -39,12 +39,12 @@ export class QuoteService {
       }
       
       // Call 1inch API
-      const response: AxiosResponse = await axios.get(`${this.baseUrl}/quote`, {
+      const response: AxiosResponse = await axios.get(`${this.baseUrl}/swap/v5.2/quote`, {
         params: {
-          fromTokenAddress: params.fromToken,
-          toTokenAddress: params.toToken,
+          src: params.fromToken,
+          dst: params.toToken,
           amount: params.amount,
-          chainId: params.chainId,
+          chain: params.chainId,
           apiKey: this.apiKey
         },
         timeout: 10000 // 10 second timeout
@@ -237,9 +237,9 @@ export class QuoteService {
    */
   async getSupportedTokens(chainId: number): Promise<any[]> {
     try {
-      const response = await axios.get(`${this.baseUrl}/tokens`, {
+      const response = await axios.get(`${this.baseUrl}/swap/v5.2/tokens`, {
         params: {
-          chainId,
+          chain: chainId,
           apiKey: this.apiKey
         }
       });

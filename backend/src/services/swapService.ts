@@ -13,7 +13,7 @@ import {
 } from '../types/swap';
 
 export class SwapService {
-  private readonly baseUrl = 'https://api.1inch.io/v5.0';
+  private readonly baseUrl = 'https://api.1inch.dev';
   private readonly apiKey: string;
   private swapHistory: Map<string, SwapData> = new Map();
   
@@ -50,13 +50,13 @@ export class SwapService {
       }
       
       // Call 1inch swap API
-      const response: AxiosResponse = await axios.post(`${this.baseUrl}/swap`, {
-        fromTokenAddress: params.fromToken,
-        toTokenAddress: params.toToken,
+      const response: AxiosResponse = await axios.post(`${this.baseUrl}/swap/v5.2/swap`, {
+        src: params.fromToken,
+        dst: params.toToken,
         amount: params.amount,
-        fromAddress: params.userAddress,
+        from: params.userAddress,
         slippage: params.slippage || SWAP_CONSTANTS.DEFAULT_SLIPPAGE,
-        chainId: params.chainId,
+        chain: params.chainId,
         apiKey: this.apiKey
       }, {
         timeout: 15000 // 15 second timeout
@@ -120,13 +120,13 @@ export class SwapService {
       }
       
       // Call 1inch Fusion+ API
-      const response: AxiosResponse = await axios.post(`${this.baseUrl}/fusion/swap`, {
-        fromTokenAddress: params.fromToken,
-        toTokenAddress: params.toToken,
+      const response: AxiosResponse = await axios.post(`${this.baseUrl}/fusion/v1.0/quote`, {
+        src: params.fromToken,
+        dst: params.toToken,
         amount: params.amount,
-        fromAddress: params.userAddress,
+        from: params.userAddress,
         slippage: params.slippage || SWAP_CONSTANTS.DEFAULT_SLIPPAGE,
-        chainId: params.chainId,
+        chain: params.chainId,
         permit: params.permit,
         deadline: params.deadline || Math.floor(Date.now() / 1000) + SWAP_CONSTANTS.DEFAULT_DEADLINE,
         apiKey: this.apiKey
@@ -335,12 +335,12 @@ export class SwapService {
    */
   private async getQuote(params: SwapRequest): Promise<any> {
     try {
-      const response: AxiosResponse = await axios.get(`${this.baseUrl}/quote`, {
+      const response: AxiosResponse = await axios.get(`${this.baseUrl}/swap/v5.2/quote`, {
         params: {
-          fromTokenAddress: params.fromToken,
-          toTokenAddress: params.toToken,
+          src: params.fromToken,
+          dst: params.toToken,
           amount: params.amount,
-          chainId: params.chainId,
+          chain: params.chainId,
           apiKey: this.apiKey
         },
         timeout: 10000
