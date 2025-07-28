@@ -6,10 +6,8 @@ import { config } from './config/env';
 import { logger } from './utils/logger';
 import { errorHandler } from './api/middleware/errorHandler';
 
-// Import routes
-import quoteRoutes from './api/routes/quoteRoutes';
-import swapRoutes from './api/routes/swapRoutes';
-import predicateRoutes from './api/routes/predicateRoutes';
+// Import API router
+import apiRouter from './api/index';
 
 // Create Express app
 const app = express();
@@ -66,9 +64,7 @@ app.get('/health', (req, res) => {
 });
 
 // API routes
-app.use('/api', quoteRoutes);
-app.use('/api', swapRoutes);
-app.use('/api', predicateRoutes);
+app.use('/api', apiRouter);
 
 // 404 handler
 app.use('*', (req, res) => {
