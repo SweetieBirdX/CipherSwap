@@ -8,6 +8,7 @@ import { errorHandler } from './api/middleware/errorHandler';
 
 // Import routes
 import quoteRoutes from './api/routes/quoteRoutes';
+import swapRoutes from './api/routes/swapRoutes';
 
 // Create Express app
 const app = express();
@@ -65,6 +66,7 @@ app.get('/health', (req, res) => {
 
 // API routes
 app.use('/api', quoteRoutes);
+app.use('/api', swapRoutes);
 
 // 404 handler
 app.use('*', (req, res) => {
