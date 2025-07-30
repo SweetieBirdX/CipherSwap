@@ -59,6 +59,7 @@ import {
 } from '../types/swap';
 import { ethers } from 'ethers';
 import { FlashbotsBundleProvider } from 'flashbots-ethers-v6-provider-bundle';
+import SlippageToleranceService, { SlippageToleranceResult, SlippageAdjustmentFactors } from './slippageToleranceService';
 
 export class SwapService {
   private readonly baseUrl = 'https://api.1inch.dev';
@@ -69,12 +70,16 @@ export class SwapService {
   private bundleHistory: Map<string, FlashbotsBundleData> = new Map();
   private flashbotsProvider?: FlashbotsBundleProvider;
   private ethersProvider?: ethers.JsonRpcProvider;
+  private slippageToleranceService: SlippageToleranceService;
   
   constructor() {
     this.apiKey = config.INCH_API_KEY;
     if (!this.apiKey) {
       throw new Error('1inch API key is required');
     }
+    
+    // Initialize slippage tolerance service
+    this.slippageToleranceService = new SlippageToleranceService();
     
     // Skip Flashbots initialization in test environment
     if (process.env.NODE_ENV !== 'test') {
@@ -2185,9 +2190,12 @@ export class SwapService {
       }
     }
     
-    // Slippage validation
-    if (params.slippage && params.slippage > SWAP_CONSTANTS.MAX_SLIPPAGE) {
-      errors.push(`Slippage too high. Maximum: ${SWAP_CONSTANTS.MAX_SLIPPAGE}%`);
+    // Enhanced slippage validation using slippage tolerance service
+    if (params.slippage) {
+      const slippageValidation = this.slippageToleranceService.validateTolerance(params.slippage);
+      if (!slippageValidation.isValid) {
+        errors.push(...slippageValidation.errors);
+      }
     }
     
     // Token validation
