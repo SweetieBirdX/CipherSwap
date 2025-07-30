@@ -18,6 +18,12 @@ export interface SwapResponse {
   error?: string;
 }
 
+export interface EnhancedSwapResponse {
+  success: boolean;
+  data?: SwapSimulation;
+  error?: string;
+}
+
 export interface SwapData {
   swapId: string;
   txHash?: string;
@@ -215,6 +221,164 @@ export interface SwapSimulation {
   gasDifference: string;
   priceImpactDifference: number;
   estimatedGains: number;
+  // Enhanced simulation data
+  slippageAnalysis: SlippageAnalysis;
+  priceImpactAnalysis: PriceImpactAnalysis;
+  gasAnalysis: GasAnalysis;
+  marketConditions: MarketConditions;
+  parameterRecommendations: ParameterRecommendations;
+  riskAssessment: RiskAssessment;
+  executionOptimization: ExecutionOptimization;
+}
+
+export interface SlippageAnalysis {
+  currentSlippage: number;
+  expectedSlippage: number;
+  slippageTolerance: number;
+  slippageRisk: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+  slippageTrend: 'INCREASING' | 'DECREASING' | 'STABLE';
+  recommendedSlippage: number;
+  slippageFactors: {
+    liquidityDepth: number;
+    tradeSize: number;
+    marketVolatility: number;
+    timeOfDay: number;
+  };
+}
+
+export interface PriceImpactAnalysis {
+  priceImpact: number;
+  priceImpactPercentage: number;
+  priceImpactRisk: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+  priceImpactTrend: 'INCREASING' | 'DECREASING' | 'STABLE';
+  recommendedAmount: string;
+  priceImpactFactors: {
+    poolLiquidity: number;
+    tradeSize: number;
+    marketDepth: number;
+    priceVolatility: number;
+  };
+}
+
+export interface GasAnalysis {
+  estimatedGas: string;
+  gasPrice: string;
+  totalGasCost: string;
+  gasOptimization: GasOptimization;
+  gasTrend: 'INCREASING' | 'DECREASING' | 'STABLE';
+  recommendedGasPrice: string;
+  gasFactors: {
+    networkCongestion: number;
+    blockSpace: number;
+    priorityFee: number;
+    baseFee: number;
+  };
+}
+
+export interface GasOptimization {
+  optimizedGasPrice: string;
+  priorityFee: string;
+  maxFeePerGas: string;
+  maxPriorityFeePerGas: string;
+  gasSavings: string;
+  optimizationStrategy: 'AGGRESSIVE' | 'BALANCED' | 'CONSERVATIVE';
+}
+
+export interface MarketConditions {
+  liquidityScore: number;
+  volatilityIndex: number;
+  marketDepth: number;
+  spreadAnalysis: SpreadAnalysis;
+  volumeAnalysis: VolumeAnalysis;
+  marketTrend: 'BULLISH' | 'BEARISH' | 'NEUTRAL';
+}
+
+export interface SpreadAnalysis {
+  bidAskSpread: number;
+  spreadPercentage: number;
+  spreadRisk: 'LOW' | 'MEDIUM' | 'HIGH';
+  recommendedSpread: number;
+}
+
+export interface VolumeAnalysis {
+  volume24h: string;
+  volumeChange: number;
+  volumeTrend: 'INCREASING' | 'DECREASING' | 'STABLE';
+  volumeImpact: number;
+}
+
+export interface ParameterRecommendations {
+  recommendedSlippage: number;
+  recommendedAmount: string;
+  recommendedGasPrice: string;
+  recommendedDeadline: number;
+  splitRecommendation?: SplitRecommendation;
+  timingRecommendation: TimingRecommendation;
+  routeOptimization: RouteOptimization;
+}
+
+export interface SplitRecommendation {
+  shouldSplit: boolean;
+  splitCount: number;
+  splitAmounts: string[];
+  splitIntervals: number[];
+  expectedSavings: string;
+}
+
+export interface TimingRecommendation {
+  optimalExecutionTime: number;
+  executionWindow: {
+    start: number;
+    end: number;
+  };
+  marketConditions: string;
+  urgencyLevel: 'LOW' | 'MEDIUM' | 'HIGH';
+}
+
+export interface RouteOptimization {
+  currentRoute: RouteStep[];
+  optimizedRoute: RouteStep[];
+  routeComparison: RouteComparison;
+  recommendedRoute: RouteStep[];
+}
+
+export interface RouteComparison {
+  gasSavings: string;
+  slippageSavings: number;
+  timeSavings: number;
+  reliabilityScore: number;
+}
+
+export interface RiskAssessment {
+  overallRisk: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+  riskFactors: RiskFactor[];
+  riskScore: number;
+  mitigationStrategies: string[];
+  recommendedActions: string[];
+}
+
+export interface RiskFactor {
+  factor: string;
+  severity: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+  impact: number;
+  probability: number;
+  mitigation: string;
+}
+
+export interface ExecutionOptimization {
+  optimalExecutionStrategy: 'IMMEDIATE' | 'WAIT' | 'SPLIT' | 'CANCEL';
+  executionConfidence: number;
+  expectedOutcome: {
+    bestCase: string;
+    worstCase: string;
+    expectedCase: string;
+  };
+  optimizationMetrics: {
+    gasEfficiency: number;
+    slippageEfficiency: number;
+    timeEfficiency: number;
+    costEfficiency: number;
+  };
 }
 
 // API Response types
