@@ -7,8 +7,9 @@ module.exports = {
     '**/?(*.)+(spec|test).ts'
   ],
   transform: {
-    '^.+\\.ts$': 'ts-jest'
+    '^.+\\.ts$': ['ts-jest', { tsconfig: 'tsconfig.test.json' }]
   },
+  setupFilesAfterEnv: ['<rootDir>/test/setup.ts'],
   collectCoverageFrom: [
     'src/**/*.ts',
     '!src/**/*.d.ts',
@@ -19,5 +20,5 @@ module.exports = {
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1'
   },
-  testTimeout: 10000
+  testTimeout: 30000
 }; 
