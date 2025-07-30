@@ -2,7 +2,12 @@ import { SwapService } from '../src/services/swapService';
 import { 
   MEVProtectionConfig, 
   FlashbotsBundleRequest, 
-  GasEstimateRequest 
+  GasEstimateRequest,
+  SwapRequest, 
+  SwapData, 
+  SwapSimulation,
+  SwapResponse,
+  EnhancedSwapResponse
 } from '../src/types/swap';
 
 // Set test environment
@@ -72,6 +77,26 @@ describe('Flashbots MEV Protection', () => {
     
     // Mock the initializeFlashbotsProvider method to do nothing
     jest.spyOn(swapService as any, 'initializeFlashbotsProvider').mockResolvedValue(undefined);
+    
+    // Mock the getQuote method for enhanced simulation tests
+    jest.spyOn(swapService as any, 'getQuote').mockResolvedValue({
+      success: true,
+      data: {
+        toTokenAmount: '1800000000000000000', // 1.8 ETH
+        estimatedGas: '210000',
+        route: [
+          {
+            fromToken: '0xA0b86a33E6441b8c4C8C0b4b8C0b4b8C0b4b8C0b',
+            toToken: '0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6',
+            fromTokenAmount: '1000000000000000000',
+            toTokenAmount: '1800000000000000000',
+            estimatedGas: '210000',
+            protocol: 'Uniswap V3',
+            pool: '0x1234567890abcdef1234567890abcdef12345678'
+          }
+        ]
+      }
+    });
   });
 
   afterEach(async () => {
@@ -434,6 +459,303 @@ describe('Flashbots MEV Protection', () => {
 
       expect(result.success).toBe(false);
       expect(result.error).toContain('must be a valid hex string');
+    });
+  });
+
+  describe('Enhanced Swap Simulation', () => {
+    it('should perform enhanced simulation with comprehensive analysis', async () => {
+      const params: SwapRequest = {
+        fromToken: '0xA0b86a33E6441b8c4C8C0b4b8C0b4b8C0b4b8C0b',
+        toToken: '0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6',
+        amount: '1000000000000000000', // 1 ETH
+        chainId: 1,
+        slippage: 0.5,
+        userAddress: '0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6'
+      };
+
+      const result = await trackAsyncOperation(
+        swapService.simulateSwapEnhanced(params)
+      );
+
+      expect(result.success).toBe(true);
+      expect(result.data).toBeDefined();
+      
+      const simulation = result.data as SwapSimulation;
+      
+      // Check basic simulation data
+      expect(simulation.originalQuote).toBeDefined();
+      expect(simulation.simulatedSwap).toBeDefined();
+      expect(simulation.slippageDifference).toBeDefined();
+      expect(simulation.gasDifference).toBeDefined();
+      expect(simulation.priceImpactDifference).toBeDefined();
+      expect(simulation.estimatedGains).toBeDefined();
+      
+      // Check enhanced analysis data
+      expect(simulation.slippageAnalysis).toBeDefined();
+      expect(simulation.priceImpactAnalysis).toBeDefined();
+      expect(simulation.gasAnalysis).toBeDefined();
+      expect(simulation.marketConditions).toBeDefined();
+      expect(simulation.parameterRecommendations).toBeDefined();
+      expect(simulation.riskAssessment).toBeDefined();
+      expect(simulation.executionOptimization).toBeDefined();
+      
+      // Validate slippage analysis
+      expect(simulation.slippageAnalysis.currentSlippage).toBe(0.5);
+      expect(simulation.slippageAnalysis.expectedSlippage).toBeGreaterThan(0);
+      expect(simulation.slippageAnalysis.slippageRisk).toMatch(/^(LOW|MEDIUM|HIGH|CRITICAL)$/);
+      expect(simulation.slippageAnalysis.slippageTrend).toMatch(/^(INCREASING|DECREASING|STABLE)$/);
+      expect(simulation.slippageAnalysis.recommendedSlippage).toBeGreaterThan(0);
+      expect(simulation.slippageAnalysis.slippageFactors).toBeDefined();
+      
+      // Validate price impact analysis
+      expect(simulation.priceImpactAnalysis.priceImpact).toBeGreaterThanOrEqual(0);
+      expect(simulation.priceImpactAnalysis.priceImpactPercentage).toBeGreaterThanOrEqual(0);
+      expect(simulation.priceImpactAnalysis.priceImpactRisk).toMatch(/^(LOW|MEDIUM|HIGH|CRITICAL)$/);
+      expect(simulation.priceImpactAnalysis.priceImpactTrend).toMatch(/^(INCREASING|DECREASING|STABLE)$/);
+      expect(simulation.priceImpactAnalysis.recommendedAmount).toBeDefined();
+      expect(simulation.priceImpactAnalysis.priceImpactFactors).toBeDefined();
+      
+      // Validate gas analysis
+      expect(simulation.gasAnalysis.estimatedGas).toBeDefined();
+      expect(simulation.gasAnalysis.gasPrice).toBeDefined();
+      expect(simulation.gasAnalysis.totalGasCost).toBeDefined();
+      expect(simulation.gasAnalysis.gasOptimization).toBeDefined();
+      expect(simulation.gasAnalysis.gasTrend).toMatch(/^(INCREASING|DECREASING|STABLE)$/);
+      expect(simulation.gasAnalysis.recommendedGasPrice).toBeDefined();
+      expect(simulation.gasAnalysis.gasFactors).toBeDefined();
+      
+      // Validate market conditions
+      expect(simulation.marketConditions.liquidityScore).toBeGreaterThan(0);
+      expect(simulation.marketConditions.volatilityIndex).toBeGreaterThanOrEqual(0);
+      expect(simulation.marketConditions.marketDepth).toBeGreaterThan(0);
+      expect(simulation.marketConditions.spreadAnalysis).toBeDefined();
+      expect(simulation.marketConditions.volumeAnalysis).toBeDefined();
+      expect(simulation.marketConditions.marketTrend).toMatch(/^(BULLISH|BEARISH|NEUTRAL)$/);
+      
+      // Validate parameter recommendations
+      expect(simulation.parameterRecommendations.recommendedSlippage).toBeGreaterThan(0);
+      expect(simulation.parameterRecommendations.recommendedAmount).toBeDefined();
+      expect(simulation.parameterRecommendations.recommendedGasPrice).toBeDefined();
+      expect(simulation.parameterRecommendations.recommendedDeadline).toBeGreaterThan(0);
+      expect(simulation.parameterRecommendations.timingRecommendation).toBeDefined();
+      expect(simulation.parameterRecommendations.routeOptimization).toBeDefined();
+      
+      // Validate risk assessment
+      expect(simulation.riskAssessment.overallRisk).toMatch(/^(LOW|MEDIUM|HIGH|CRITICAL)$/);
+      expect(simulation.riskAssessment.riskFactors).toBeInstanceOf(Array);
+      expect(simulation.riskAssessment.riskScore).toBeGreaterThanOrEqual(0);
+      expect(simulation.riskAssessment.mitigationStrategies).toBeInstanceOf(Array);
+      expect(simulation.riskAssessment.recommendedActions).toBeInstanceOf(Array);
+      
+      // Validate execution optimization
+      expect(simulation.executionOptimization.optimalExecutionStrategy).toMatch(/^(IMMEDIATE|WAIT|SPLIT|CANCEL)$/);
+      expect(simulation.executionOptimization.executionConfidence).toBeGreaterThanOrEqual(0);
+      expect(simulation.executionOptimization.executionConfidence).toBeLessThanOrEqual(1);
+      expect(simulation.executionOptimization.expectedOutcome).toBeDefined();
+      expect(simulation.executionOptimization.optimizationMetrics).toBeDefined();
+    });
+
+    it('should execute swap with optimization', async () => {
+      const params: SwapRequest = {
+        fromToken: '0xA0b86a33E6441b8c4C8C0b4b8C0b4b8C0b4b8C0b',
+        toToken: '0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6',
+        amount: '1000000000000000000', // 1 ETH
+        chainId: 1,
+        slippage: 0.5,
+        userAddress: '0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6'
+      };
+
+      const result = await trackAsyncOperation(
+        swapService.executeSwapWithOptimization(params)
+      );
+
+      expect(result.success).toBe(true);
+      expect(result.data).toBeDefined();
+      
+      const swapData = result.data as SwapData;
+      expect(swapData.swapId).toBeDefined();
+      expect(swapData.fromToken).toBe(params.fromToken);
+      expect(swapData.toToken).toBe(params.toToken);
+      expect(swapData.fromAmount).toBe(params.amount);
+      expect(swapData.userAddress).toBe(params.userAddress);
+    });
+
+    it('should handle high risk scenarios with cancellation', async () => {
+      // Mock high risk scenario by creating a large trade
+      const params: SwapRequest = {
+        fromToken: '0xA0b86a33E6441b8c4C8C0b4b8C0b4b8C0b4b8C0b',
+        toToken: '0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6',
+        amount: '1000000000000000000000000', // 1M ETH - very large trade
+        chainId: 1,
+        slippage: 0.1, // Very low slippage
+        userAddress: '0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6'
+      };
+
+      const result = await trackAsyncOperation(
+        swapService.executeSwapWithOptimization(params)
+      );
+
+      // Should either succeed with optimization or be cancelled due to high risk
+      expect(result.success).toBeDefined();
+      if (!result.success) {
+        expect(result.error).toMatch(/cancelled|delayed|unfavorable/);
+      }
+    });
+
+    it('should provide split recommendations for large trades', async () => {
+      const params: SwapRequest = {
+        fromToken: '0xA0b86a33E6441b8c4C8C0b4b8C0b4b8C0b4b8C0b',
+        toToken: '0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6',
+        amount: '100000000000000000000', // 100 ETH - large trade
+        chainId: 1,
+        slippage: 0.5,
+        userAddress: '0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6'
+      };
+
+      const result = await trackAsyncOperation(
+        swapService.simulateSwapEnhanced(params)
+      );
+
+      expect(result.success).toBe(true);
+      expect(result.data).toBeDefined();
+      
+      const simulation = result.data as SwapSimulation;
+      
+      // Check if split recommendation is provided
+      if (simulation.parameterRecommendations.splitRecommendation) {
+        const splitRec = simulation.parameterRecommendations.splitRecommendation;
+        expect(splitRec.shouldSplit).toBeDefined();
+        expect(splitRec.splitCount).toBeGreaterThan(0);
+        expect(splitRec.splitAmounts).toBeInstanceOf(Array);
+        expect(splitRec.splitAmounts.length).toBe(splitRec.splitCount);
+        expect(splitRec.splitIntervals).toBeInstanceOf(Array);
+        expect(splitRec.expectedSavings).toBeDefined();
+      }
+    });
+
+    it('should analyze gas optimization strategies', async () => {
+      const params: SwapRequest = {
+        fromToken: '0xA0b86a33E6441b8c4C8C0b4b8C0b4b8C0b4b8C0b',
+        toToken: '0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6',
+        amount: '1000000000000000000', // 1 ETH
+        chainId: 1,
+        slippage: 0.5,
+        userAddress: '0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6'
+      };
+
+      const result = await trackAsyncOperation(
+        swapService.simulateSwapEnhanced(params)
+      );
+
+      expect(result.success).toBe(true);
+      expect(result.data).toBeDefined();
+      
+      const simulation = result.data as SwapSimulation;
+      const gasAnalysis = simulation.gasAnalysis;
+      
+      // Validate gas optimization
+      expect(gasAnalysis.gasOptimization.optimizedGasPrice).toBeDefined();
+      expect(gasAnalysis.gasOptimization.priorityFee).toBeDefined();
+      expect(gasAnalysis.gasOptimization.maxFeePerGas).toBeDefined();
+      expect(gasAnalysis.gasOptimization.maxPriorityFeePerGas).toBeDefined();
+      expect(gasAnalysis.gasOptimization.gasSavings).toBeDefined();
+      expect(gasAnalysis.gasOptimization.optimizationStrategy).toMatch(/^(AGGRESSIVE|BALANCED|CONSERVATIVE)$/);
+      
+      // Validate gas factors
+      expect(gasAnalysis.gasFactors.networkCongestion).toBeGreaterThanOrEqual(0);
+      expect(gasAnalysis.gasFactors.blockSpace).toBeGreaterThanOrEqual(0);
+      expect(gasAnalysis.gasFactors.priorityFee).toBeGreaterThan(0);
+      expect(gasAnalysis.gasFactors.baseFee).toBeGreaterThan(0);
+    });
+
+    it('should provide market condition analysis', async () => {
+      const params: SwapRequest = {
+        fromToken: '0xA0b86a33E6441b8c4C8C0b4b8C0b4b8C0b4b8C0b',
+        toToken: '0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6',
+        amount: '1000000000000000000', // 1 ETH
+        chainId: 1,
+        slippage: 0.5,
+        userAddress: '0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6'
+      };
+
+      const result = await trackAsyncOperation(
+        swapService.simulateSwapEnhanced(params)
+      );
+
+      expect(result.success).toBe(true);
+      expect(result.data).toBeDefined();
+      
+      const simulation = result.data as SwapSimulation;
+      const marketConditions = simulation.marketConditions;
+      
+      // Validate spread analysis
+      expect(marketConditions.spreadAnalysis.bidAskSpread).toBeGreaterThan(0);
+      expect(marketConditions.spreadAnalysis.spreadPercentage).toBeGreaterThan(0);
+      expect(marketConditions.spreadAnalysis.spreadRisk).toMatch(/^(LOW|MEDIUM|HIGH)$/);
+      expect(marketConditions.spreadAnalysis.recommendedSpread).toBeGreaterThan(0);
+      
+      // Validate volume analysis
+      expect(marketConditions.volumeAnalysis.volume24h).toBeDefined();
+      expect(marketConditions.volumeAnalysis.volumeChange).toBeDefined();
+      expect(marketConditions.volumeAnalysis.volumeTrend).toMatch(/^(INCREASING|DECREASING|STABLE)$/);
+      expect(marketConditions.volumeAnalysis.volumeImpact).toBeDefined();
+    });
+
+    it('should provide timing recommendations', async () => {
+      const params: SwapRequest = {
+        fromToken: '0xA0b86a33E6441b8c4C8C0b4b8C0b4b8C0b4b8C0b',
+        toToken: '0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6',
+        amount: '1000000000000000000', // 1 ETH
+        chainId: 1,
+        slippage: 0.5,
+        userAddress: '0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6'
+      };
+
+      const result = await trackAsyncOperation(
+        swapService.simulateSwapEnhanced(params)
+      );
+
+      expect(result.success).toBe(true);
+      expect(result.data).toBeDefined();
+      
+      const simulation = result.data as SwapSimulation;
+      const timingRec = simulation.parameterRecommendations.timingRecommendation;
+      
+      expect(timingRec.optimalExecutionTime).toBeGreaterThan(Date.now());
+      expect(timingRec.executionWindow.start).toBeLessThanOrEqual(Date.now());
+      expect(timingRec.executionWindow.end).toBeGreaterThan(Date.now());
+      expect(timingRec.marketConditions).toBeDefined();
+      expect(timingRec.urgencyLevel).toMatch(/^(LOW|MEDIUM|HIGH)$/);
+    });
+
+    it('should calculate optimization metrics', async () => {
+      const params: SwapRequest = {
+        fromToken: '0xA0b86a33E6441b8c4C8C0b4b8C0b4b8C0b4b8C0b',
+        toToken: '0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6',
+        amount: '1000000000000000000', // 1 ETH
+        chainId: 1,
+        slippage: 0.5,
+        userAddress: '0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6'
+      };
+
+      const result = await trackAsyncOperation(
+        swapService.simulateSwapEnhanced(params)
+      );
+
+      expect(result.success).toBe(true);
+      expect(result.data).toBeDefined();
+      
+      const simulation = result.data as SwapSimulation;
+      const metrics = simulation.executionOptimization.optimizationMetrics;
+      
+      expect(metrics.gasEfficiency).toBeGreaterThanOrEqual(0);
+      expect(metrics.gasEfficiency).toBeLessThanOrEqual(1);
+      expect(metrics.slippageEfficiency).toBeGreaterThanOrEqual(0);
+      expect(metrics.slippageEfficiency).toBeLessThanOrEqual(1);
+      expect(metrics.timeEfficiency).toBeGreaterThanOrEqual(0);
+      expect(metrics.timeEfficiency).toBeLessThanOrEqual(1);
+      expect(metrics.costEfficiency).toBeGreaterThanOrEqual(0);
+      expect(metrics.costEfficiency).toBeLessThanOrEqual(1);
     });
   });
 }); 
