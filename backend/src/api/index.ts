@@ -3,6 +3,7 @@ import quoteRoutes from './routes/quoteRoutes';
 import swapRoutes from './routes/swapRoutes';
 import predicateRoutes from './routes/predicateRoutes';
 import oracleRoutes from './routes/oracleRoutes';
+import slippageRoutes from './routes/slippageRoutes';
 import docsRoutes from './routes/docsRoutes';
 
 const apiRouter = Router();
@@ -55,6 +56,17 @@ const apiDocs = {
         'GET /oracle/networks': 'Get all supported networks with their price feeds',
         'GET /oracle/health/:chainId/:pair': 'Get price feed health status'
       }
+    },
+    slippage: {
+      base: '/api/slippage',
+      endpoints: {
+        'GET /slippage/config': 'Get current slippage tolerance configuration',
+        'PUT /slippage/config': 'Update slippage tolerance configuration',
+        'POST /slippage/calculate': 'Calculate optimal slippage tolerance for scenario',
+        'POST /slippage/validate': 'Validate slippage tolerance against limits',
+        'GET /slippage/recommended/:chainId': 'Get recommended slippage tolerance for chain',
+        'POST /slippage/reset': 'Reset slippage configuration to defaults'
+      }
     }
   },
   features: [
@@ -64,7 +76,8 @@ const apiDocs = {
     'Cross-chain Support',
     'Slippage Protection',
     'Real-time Price Feeds',
-    'Oracle Price Validation'
+    'Oracle Price Validation',
+    'Configurable Slippage Tolerance Controls'
   ],
   chains: [1, 137, 42161, 8453, 324], // Ethereum, Polygon, Arbitrum, Base, zkSync
   hackathon: 'ETHGlobal Unite DeFi'
@@ -95,14 +108,15 @@ apiRouter.use('/', quoteRoutes);
 apiRouter.use('/', swapRoutes);
 apiRouter.use('/', predicateRoutes);
 apiRouter.use('/', oracleRoutes);
+apiRouter.use('/', slippageRoutes);
 
 // API Stats endpoint
 apiRouter.get('/stats', (req, res) => {
   res.json({
     success: true,
     data: {
-      totalEndpoints: 24,
-      activeServices: ['quote', 'swap', 'predicate', 'oracle'],
+      totalEndpoints: 30,
+      activeServices: ['quote', 'swap', 'predicate', 'oracle', 'slippage'],
       supportedChains: apiDocs.chains,
       features: apiDocs.features,
       uptime: process.uptime(),
