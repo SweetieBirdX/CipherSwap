@@ -5,6 +5,7 @@ import predicateRoutes from './routes/predicateRoutes';
 import oracleRoutes from './routes/oracleRoutes';
 import slippageRoutes from './routes/slippageRoutes';
 import orderbookRoutes from './routes/orderbookRoutes';
+import rfqRoutes from './routes/rfqRoutes';
 import docsRoutes from './routes/docsRoutes';
 
 const apiRouter = Router();
@@ -84,21 +85,36 @@ const apiDocs = {
         'GET /orderbook/stats': 'Get orderbook statistics',
         'POST /orderbook/cleanup': 'Clean up expired orders'
       }
+    },
+    rfq: {
+      base: '/api/rfq',
+      endpoints: {
+        'POST /rfq/request': 'Create a new RFQ request',
+        'POST /rfq/quote': 'Submit a quote response from a resolver',
+        'GET /rfq/request/:requestId/quotes': 'Get quotes for a request',
+        'POST /rfq/quote/:responseId/accept': 'Accept a quote and execute the swap',
+        'PUT /rfq/execution/:executionId/status': 'Update execution status',
+        'GET /rfq/request/:requestId': 'Get RFQ request by ID',
+        'GET /rfq/requests': 'Query RFQ requests with filters',
+        'GET /rfq/stats': 'Get RFQ statistics',
+        'POST /rfq/cleanup': 'Clean up expired RFQ data'
+      }
     }
   },
-  features: [
-    '1inch DEX Aggregation',
-    'Fusion+ MEV Protection',
-    'Chainlink Oracle Integration',
-    'Cross-chain Support',
-    'Slippage Protection',
-    'Real-time Price Feeds',
-    'Oracle Price Validation',
-    'Configurable Slippage Tolerance Controls',
-    'Off-chain Orderbook',
-    'Resolver Bot Whitelist',
-    'MEV-Protected Order Execution'
-  ],
+        features: [
+        '1inch DEX Aggregation',
+        'Fusion+ MEV Protection',
+        'Chainlink Oracle Integration',
+        'Cross-chain Support',
+        'Slippage Protection',
+        'Real-time Price Feeds',
+        'Oracle Price Validation',
+        'Configurable Slippage Tolerance Controls',
+        'Off-chain Orderbook',
+        'Resolver Bot Whitelist',
+        'MEV-Protected Order Execution',
+        'Request for Quote (RFQ) System'
+      ],
   chains: [1, 137, 42161, 8453, 324], // Ethereum, Polygon, Arbitrum, Base, zkSync
   hackathon: 'ETHGlobal Unite DeFi'
 };
@@ -130,19 +146,20 @@ apiRouter.use('/', predicateRoutes);
 apiRouter.use('/', oracleRoutes);
 apiRouter.use('/', slippageRoutes);
 apiRouter.use('/', orderbookRoutes);
+apiRouter.use('/', rfqRoutes);
 
 // API Stats endpoint
 apiRouter.get('/stats', (req, res) => {
   res.json({
     success: true,
-    data: {
-      totalEndpoints: 40,
-      activeServices: ['quote', 'swap', 'predicate', 'oracle', 'slippage', 'orderbook'],
-      supportedChains: apiDocs.chains,
-      features: apiDocs.features,
-      uptime: process.uptime(),
-      timestamp: Date.now()
-    }
+          data: {
+        totalEndpoints: 49,
+        activeServices: ['quote', 'swap', 'predicate', 'oracle', 'slippage', 'orderbook', 'rfq'],
+        supportedChains: apiDocs.chains,
+        features: apiDocs.features,
+        uptime: process.uptime(),
+        timestamp: Date.now()
+      }
   });
 });
 
