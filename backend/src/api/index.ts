@@ -2,6 +2,7 @@ import { Router } from 'express';
 import quoteRoutes from './routes/quoteRoutes';
 import swapRoutes from './routes/swapRoutes';
 import predicateRoutes from './routes/predicateRoutes';
+import oracleRoutes from './routes/oracleRoutes';
 
 const apiRouter = Router();
 
@@ -41,6 +42,17 @@ const apiDocs = {
         'POST /predicate/cancel/:id': 'Cancel active predicate',
         'GET /predicate/status/:id': 'Get predicate status and details'
       }
+    },
+    oracle: {
+      base: '/api/oracle',
+      endpoints: {
+        'GET /oracle/price/:chainId/:pair': 'Get current price from Chainlink Oracle',
+        'POST /oracle/price/batch': 'Get multiple prices at once',
+        'POST /oracle/price/tolerance': 'Get price with tolerance check',
+        'GET /oracle/feeds/:chainId': 'Get available price feeds for a network',
+        'GET /oracle/networks': 'Get all supported networks with their price feeds',
+        'GET /oracle/health/:chainId/:pair': 'Get price feed health status'
+      }
     }
   },
   features: [
@@ -49,9 +61,10 @@ const apiDocs = {
     'Chainlink Oracle Integration',
     'Cross-chain Support',
     'Slippage Protection',
-    'Real-time Price Feeds'
+    'Real-time Price Feeds',
+    'Oracle Price Validation'
   ],
-  chains: [1, 137, 42161], // Ethereum, Polygon, Arbitrum
+  chains: [1, 137, 42161, 8453, 324], // Ethereum, Polygon, Arbitrum, Base, zkSync
   hackathon: 'ETHGlobal Unite DeFi'
 };
 
@@ -79,14 +92,15 @@ apiRouter.get('/health', (req, res) => {
 apiRouter.use('/', quoteRoutes);
 apiRouter.use('/', swapRoutes);
 apiRouter.use('/', predicateRoutes);
+apiRouter.use('/', oracleRoutes);
 
 // API Stats endpoint
 apiRouter.get('/stats', (req, res) => {
   res.json({
     success: true,
     data: {
-      totalEndpoints: 18,
-      activeServices: ['quote', 'swap', 'predicate'],
+      totalEndpoints: 24,
+      activeServices: ['quote', 'swap', 'predicate', 'oracle'],
       supportedChains: apiDocs.chains,
       features: apiDocs.features,
       uptime: process.uptime(),
