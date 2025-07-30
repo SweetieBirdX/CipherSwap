@@ -263,4 +263,105 @@ export const SWAP_CONSTANTS = {
   ESCROW_CHECK_INTERVAL: 5000, // 5 seconds
   SECRET_SUBMISSION_TIMEOUT: 60000, // 60 seconds
   MAX_ESCROW_WAIT_TIME: 300000 // 5 minutes
-} as const; 
+} as const;
+
+// Flashbots Bundle Types
+export interface FlashbotsBundleRequest {
+  transactions: BundleTransaction[];
+  targetBlock?: number;
+  maxBlockNumber?: number;
+  minTimestamp?: number;
+  maxTimestamp?: number;
+  revertingTxHashes?: string[];
+  replacementUuid?: string;
+  refundRecipient?: string;
+  refundPercent?: number;
+}
+
+export interface BundleTransaction {
+  transaction: string; // Signed transaction hex
+  canRevert?: boolean;
+}
+
+export interface FlashbotsBundleResponse {
+  success: boolean;
+  data?: FlashbotsBundleData;
+  error?: string;
+}
+
+export interface FlashbotsBundleData {
+  bundleId: string;
+  bundleHash: string;
+  targetBlock: number;
+  status: BundleStatus;
+  transactions: BundleTransaction[];
+  gasEstimate: string;
+  gasPrice: string;
+  totalValue: string;
+  refundRecipient?: string;
+  refundPercent?: number;
+  timestamp: number;
+  userAddress: string;
+  simulationResult?: BundleSimulationResult;
+}
+
+export enum BundleStatus {
+  PENDING = 'pending',
+  SUBMITTED = 'submitted',
+  CONFIRMED = 'confirmed',
+  FAILED = 'failed',
+  EXPIRED = 'expired',
+  REVERTED = 'reverted'
+}
+
+export interface BundleSimulationResult {
+  success: boolean;
+  error?: string;
+  gasUsed: string;
+  blockNumber: number;
+  stateBlockNumber: number;
+  mevGasPrice: string;
+  profit: string;
+  refundableValue: string;
+  logs: any[];
+}
+
+export interface FlashbotsSimulationRequest {
+  bundle: FlashbotsBundleRequest;
+  blockNumber: number;
+  stateBlockNumber?: number;
+}
+
+export interface FlashbotsSimulationResponse {
+  success: boolean;
+  data?: BundleSimulationResult;
+  error?: string;
+}
+
+export interface GasEstimateRequest {
+  transactions: string[];
+  blockNumber?: number;
+  stateBlockNumber?: number;
+}
+
+export interface GasEstimateResponse {
+  success: boolean;
+  data?: {
+    gasUsed: string;
+    gasPrice: string;
+    totalCost: string;
+    estimatedProfit: string;
+  };
+  error?: string;
+}
+
+export interface MEVProtectionConfig {
+  useFlashbots: boolean;
+  targetBlock?: number;
+  maxBlockNumber?: number;
+  refundRecipient?: string;
+  refundPercent?: number;
+  minTimestamp?: number;
+  maxTimestamp?: number;
+  revertingTxHashes?: string[];
+} 
