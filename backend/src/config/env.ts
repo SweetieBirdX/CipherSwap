@@ -37,7 +37,13 @@ export const config = {
   // Feature Flags
   ENABLE_MEV_PROTECTION: process.env.ENABLE_MEV_PROTECTION === 'true',
   ENABLE_FUSION: process.env.ENABLE_FUSION === 'true',
-  ENABLE_L2_SUPPORT: process.env.ENABLE_L2_SUPPORT === 'true'
+  ENABLE_L2_SUPPORT: process.env.ENABLE_L2_SUPPORT === 'true',
+  
+  // Flashbots Configuration
+  FLASHBOTS_RELAY_URL: process.env.FLASHBOTS_RELAY_URL || 'https://relay.flashbots.net',
+  FLASHBOTS_SIGNER_PRIVATE_KEY: process.env.FLASHBOTS_SIGNER_PRIVATE_KEY,
+  FLASHBOTS_BUNDLE_TIMEOUT: parseInt(process.env.FLASHBOTS_BUNDLE_TIMEOUT || '120000'), // 2 minutes
+  FLASHBOTS_MAX_RETRIES: parseInt(process.env.FLASHBOTS_MAX_RETRIES || '3')
 };
 
 // Validate required environment variables

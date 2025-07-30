@@ -17,4 +17,22 @@ global.console = {
   info: jest.fn(),
   warn: jest.fn(),
   error: jest.fn(),
-}; 
+};
+
+// Configure Jest for better async handling
+beforeAll(() => {
+  // Set up fake timers globally
+  jest.useFakeTimers();
+});
+
+afterAll(async () => {
+  // Clean up timers
+  jest.useRealTimers();
+  jest.clearAllMocks();
+  
+  // Wait for any remaining async operations
+  await new Promise(resolve => setTimeout(resolve, 100));
+});
+
+// Increase timeout for async operations
+jest.setTimeout(30000); 
