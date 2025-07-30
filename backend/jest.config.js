@@ -20,5 +20,12 @@ module.exports = {
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1'
   },
-  testTimeout: 30000
+  testTimeout: 30000,
+  // Add async handling configuration
+  forceExit: true,
+  detectOpenHandles: true,
+  // Increase timeout for async operations
+  setupFilesAfterEnv: ['<rootDir>/test/setup.ts'],
+  // Add global teardown
+  globalTeardown: '<rootDir>/test/teardown.ts'
 }; 
