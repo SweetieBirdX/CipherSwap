@@ -1,0 +1,63 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./backend
+      target: ${NODE_ENV:-development}
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+      - ./logs/backend:/app/logs
+    environment:
+      - NODE_ENV=${NODE_ENV:-development}
+      - INCH_API_KEY=${INCH_API_KEY}
+      - CHAINLINK_ORACLE_ADDRESS=${CHAINLINK_ORACLE_ADDRESS}
+      - INFURA_KEY=${INFURA_KEY}
+    depends_on:
+      - resolver
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  resolver:
+    build:
+      context: ./backend
+      target: ${NODE_ENV:-development}
+    command: npm run start:resolver
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=${NODE_ENV:-development}
+      - INCH_API_KEY=${INCH_API_KEY}
+      - CHAINLINK_ORACLE_ADDRESS=${CHAINLINK_ORACLE_ADDRESS}
+      - PRIVATE_KEY=${PRIVATE_KEY}
+
+  frontend:
+    build:
+      context: ./frontend
+      target: ${NODE_ENV:-development}
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=${NODE_ENV:-development}
+      - VITE_API_URL=http://localhost:3000
+    depends_on:
+      - backend
+
+networks:
+  default:
+    name: cipherswap-network
