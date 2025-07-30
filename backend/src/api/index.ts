@@ -4,6 +4,7 @@ import swapRoutes from './routes/swapRoutes';
 import predicateRoutes from './routes/predicateRoutes';
 import oracleRoutes from './routes/oracleRoutes';
 import slippageRoutes from './routes/slippageRoutes';
+import orderbookRoutes from './routes/orderbookRoutes';
 import docsRoutes from './routes/docsRoutes';
 
 const apiRouter = Router();
@@ -67,6 +68,22 @@ const apiDocs = {
         'GET /slippage/recommended/:chainId': 'Get recommended slippage tolerance for chain',
         'POST /slippage/reset': 'Reset slippage configuration to defaults'
       }
+    },
+    orderbook: {
+      base: '/api/orderbook',
+      endpoints: {
+        'POST /orderbook/orders': 'Add order to off-chain orderbook',
+        'GET /orderbook/orders': 'Query orders with filters',
+        'GET /orderbook/orders/:orderId': 'Get order by ID',
+        'PUT /orderbook/orders/:orderId/status': 'Update order status',
+        'GET /orderbook/resolver/:botAddress/fillable-orders': 'Get fillable orders for resolver bot',
+        'GET /orderbook/resolver/:botAddress/validate': 'Validate resolver bot',
+        'POST /orderbook/resolver': 'Add resolver bot to whitelist',
+        'GET /orderbook/resolver': 'Get all resolver bots',
+        'PUT /orderbook/resolver/:botAddress/status': 'Update resolver bot status',
+        'GET /orderbook/stats': 'Get orderbook statistics',
+        'POST /orderbook/cleanup': 'Clean up expired orders'
+      }
     }
   },
   features: [
@@ -77,7 +94,10 @@ const apiDocs = {
     'Slippage Protection',
     'Real-time Price Feeds',
     'Oracle Price Validation',
-    'Configurable Slippage Tolerance Controls'
+    'Configurable Slippage Tolerance Controls',
+    'Off-chain Orderbook',
+    'Resolver Bot Whitelist',
+    'MEV-Protected Order Execution'
   ],
   chains: [1, 137, 42161, 8453, 324], // Ethereum, Polygon, Arbitrum, Base, zkSync
   hackathon: 'ETHGlobal Unite DeFi'
@@ -109,14 +129,15 @@ apiRouter.use('/', swapRoutes);
 apiRouter.use('/', predicateRoutes);
 apiRouter.use('/', oracleRoutes);
 apiRouter.use('/', slippageRoutes);
+apiRouter.use('/', orderbookRoutes);
 
 // API Stats endpoint
 apiRouter.get('/stats', (req, res) => {
   res.json({
     success: true,
     data: {
-      totalEndpoints: 30,
-      activeServices: ['quote', 'swap', 'predicate', 'oracle', 'slippage'],
+      totalEndpoints: 40,
+      activeServices: ['quote', 'swap', 'predicate', 'oracle', 'slippage', 'orderbook'],
       supportedChains: apiDocs.chains,
       features: apiDocs.features,
       uptime: process.uptime(),
