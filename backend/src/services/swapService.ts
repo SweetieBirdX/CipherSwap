@@ -191,7 +191,29 @@ export class SwapService {
     quoteData: any
   ): Promise<SwapResponse> {
     try {
-      logger.info('Creating swap with MEV protection', { params });
+      logger.info('Creating swap with MEV protection', { 
+        params: {
+          fromToken: params.fromToken,
+          toToken: params.toToken,
+          amount: params.amount,
+          chainId: params.chainId,
+          userAddress: params.userAddress,
+          slippage: params.slippage,
+          deadline: params.deadline
+        },
+        timestamp: Date.now(),
+        service: 'cipherswap-api'
+      });
+
+      logger.info('Creating swap transaction for MEV protection', {
+        fromToken: params.fromToken,
+        toToken: params.toToken,
+        amount: params.amount,
+        chainId: params.chainId,
+        userAddress: params.userAddress,
+        timestamp: Date.now(),
+        service: 'cipherswap-api'
+      });
 
       // Create the swap transaction first
       const swapResponse = await axios.post(
@@ -213,7 +235,27 @@ export class SwapService {
         }
       );
 
+      logger.info('Swap transaction created successfully', {
+        status: swapResponse.status,
+        swapId: swapResponse.data?.swapId,
+        txHash: swapResponse.data?.txHash,
+        chainId: params.chainId,
+        userAddress: params.userAddress,
+        timestamp: Date.now(),
+        service: 'cipherswap-api'
+      });
+
       const swapData = this.formatSwapResponse(swapResponse.data, params, quoteData);
+      
+      logger.info('Creating MEV protection configuration', {
+        swapId: swapData.swapId,
+        txHash: swapData.txHash,
+        targetBlock: Math.floor(Date.now() / 1000) + 120,
+        maxRetries: config.FLASHBOTS_MAX_RETRIES,
+        enableFallback: config.FLASHBOTS_ENABLE_FALLBACK,
+        timestamp: Date.now(),
+        service: 'cipherswap-api'
+      });
       
       // Create Flashbots bundle with retry logic
       const mevConfig: MEVProtectionConfig = {
@@ -226,6 +268,15 @@ export class SwapService {
         fallbackSlippage: config.FLASHBOTS_FALLBACK_SLIPPAGE
       };
 
+      logger.info('Submitting transaction to Flashbots bundle for MEV protection', {
+        swapId: swapData.swapId,
+        txHash: swapData.txHash,
+        userAddress: params.userAddress,
+        mevConfig,
+        timestamp: Date.now(),
+        service: 'cipherswap-api'
+      });
+
       const bundleResponse = await this.createFlashbotsBundleWithRetry(
         [swapData.txHash!],
         params.userAddress ?? '',
@@ -233,11 +284,22 @@ export class SwapService {
       );
 
       if (!bundleResponse.success) {
+        logger.error('Flashbots bundle creation failed for MEV protection', {
+          swapId: swapData.swapId,
+          txHash: swapData.txHash,
+          error: bundleResponse.error,
+          enableFallback: config.FLASHBOTS_ENABLE_FALLBACK,
+          timestamp: Date.now(),
+          service: 'cipherswap-api'
+        });
+
         // If bundle fails, try fallback to regular transaction
         if (config.FLASHBOTS_ENABLE_FALLBACK) {
           logger.warn('Flashbots bundle failed, attempting fallback transaction', {
             swapId: swapData.swapId,
-            error: bundleResponse.error
+            error: bundleResponse.error,
+            timestamp: Date.now(),
+            service: 'cipherswap-api'
           });
           
           return await this.createFallbackSwap(params, quoteData, String(bundleResponse.error ?? 'Unknown error'));
@@ -249,14 +311,33 @@ export class SwapService {
         };
       }
 
+      logger.info('Flashbots bundle created successfully for MEV protection', {
+        swapId: swapData.swapId,
+        bundleId: bundleResponse.data!.bundleId,
+        bundleHash: bundleResponse.data!.bundleHash,
+        targetBlock: bundleResponse.data!.targetBlock,
+        userAddress: params.userAddress,
+        timestamp: Date.now(),
+        service: 'cipherswap-api'
+      });
+
       // Update swap data with bundle information
       swapData.bundleId = bundleResponse.data!.bundleId;
       swapData.bundleHash = bundleResponse.data!.bundleHash;
       this.swapHistory.set(swapData.swapId, swapData);
 
-      logger.info('Swap with MEV protection created successfully', { 
+      logger.info('MEV-protected swap created successfully', { 
         swapId: swapData.swapId,
-        bundleId: bundleResponse.data!.bundleId
+        bundleId: bundleResponse.data!.bundleId,
+        bundleHash: bundleResponse.data!.bundleHash,
+        fromToken: params.fromToken,
+        toToken: params.toToken,
+        amount: params.amount,
+        chainId: params.chainId,
+        userAddress: params.userAddress,
+        status: swapData.status,
+        timestamp: Date.now(),
+        service: 'cipherswap-api'
       });
 
       return {
@@ -265,7 +346,18 @@ export class SwapService {
       };
 
     } catch (error: any) {
-      logger.error('MEV protected swap creation error', { error: error.message });
+      logger.error('MEV-protected swap creation error', { 
+        error: error.message,
+        stack: error.stack,
+        params: {
+          fromToken: params.fromToken,
+          toToken: params.toToken,
+          userAddress: params.userAddress,
+          chainId: params.chainId
+        },
+        timestamp: Date.now(),
+        service: 'cipherswap-api'
+      });
       return {
         success: false,
         error: this.handleSwapError(error)
@@ -1519,16 +1611,48 @@ export class SwapService {
    */
   async createLimitOrder(params: LimitOrderRequest): Promise<LimitOrderResponse> {
     try {
-      logger.info('Creating MEV-protected limit order', { params });
+      logger.info('Creating MEV-protected limit order', { 
+        params: {
+          fromToken: params.fromToken,
+          toToken: params.toToken,
+          amount: params.amount,
+          chainId: params.chainId,
+          userAddress: params.userAddress,
+          limitPrice: params.limitPrice,
+          orderType: params.orderType,
+          deadline: params.deadline
+        },
+        timestamp: Date.now(),
+        service: 'cipherswap-api'
+      });
       
       // Validate limit order request
       const validation = this.validateLimitOrderRequest(params);
       if (!validation.isValid) {
+        logger.warn('Limit order validation failed', {
+          errors: validation.errors,
+          params: {
+            fromToken: params.fromToken,
+            toToken: params.toToken,
+            userAddress: params.userAddress
+          },
+          timestamp: Date.now(),
+          service: 'cipherswap-api'
+        });
         return {
           success: false,
           error: validation.errors.join(', ')
         };
       }
+      
+      logger.info('Limit order validation passed, getting Fusion+ quote', {
+        fromToken: params.fromToken,
+        toToken: params.toToken,
+        amount: params.amount,
+        chainId: params.chainId,
+        timestamp: Date.now(),
+        service: 'cipherswap-api'
+      });
       
       // Get Fusion+ quote first
       const quoteResponse = await this.getFusionQuote({
@@ -1542,11 +1666,34 @@ export class SwapService {
       });
       
       if (!quoteResponse.success) {
+        logger.error('Fusion+ quote failed for limit order', {
+          error: quoteResponse.error,
+          params: {
+            fromToken: params.fromToken,
+            toToken: params.toToken,
+            userAddress: params.userAddress
+          },
+          timestamp: Date.now(),
+          service: 'cipherswap-api'
+        });
         return {
           success: false,
           error: quoteResponse.error
         };
       }
+      
+      logger.info('Fusion+ quote received, creating limit order', {
+        quoteData: quoteResponse.data,
+        params: {
+          fromToken: params.fromToken,
+          toToken: params.toToken,
+          amount: params.amount,
+          limitPrice: params.limitPrice,
+          orderType: params.orderType
+        },
+        timestamp: Date.now(),
+        service: 'cipherswap-api'
+      });
       
       // Create Fusion+ limit order
       const response: AxiosResponse = await axios.post(`${this.baseUrl}/fusion/v1.0/order`, {
@@ -1569,18 +1716,32 @@ export class SwapService {
         timeout: 20000 // 20 second timeout for limit orders
       });
       
+      logger.info('Fusion+ API response received', {
+        status: response.status,
+        orderId: response.data?.orderId,
+        timestamp: Date.now(),
+        service: 'cipherswap-api'
+      });
+      
       // Format limit order data
       const orderData = this.formatLimitOrderResponse(response.data, params, quoteResponse.data);
       
       // Store order data
       this.limitOrderHistory.set(orderData.orderId, orderData);
       
-      logger.info('Limit order created successfully', { 
+      logger.info('MEV-protected limit order created successfully', { 
         orderId: orderData.orderId,
         fromToken: params.fromToken,
         toToken: params.toToken,
         amount: params.amount,
-        limitPrice: params.limitPrice
+        limitPrice: params.limitPrice,
+        orderType: params.orderType,
+        chainId: params.chainId,
+        userAddress: params.userAddress,
+        status: orderData.status,
+
+        timestamp: Date.now(),
+        service: 'cipherswap-api'
       });
       
       return {
@@ -1589,10 +1750,19 @@ export class SwapService {
       };
       
     } catch (error: any) {
-      logger.error('Limit order creation error', { 
+      logger.error('MEV-protected limit order creation error', { 
         error: error.message, 
-        params,
-        status: error.response?.status 
+        stack: error.stack,
+        params: {
+          fromToken: params.fromToken,
+          toToken: params.toToken,
+          userAddress: params.userAddress,
+          chainId: params.chainId
+        },
+        status: error.response?.status,
+        responseData: error.response?.data,
+        timestamp: Date.now(),
+        service: 'cipherswap-api'
       });
       
       return {
@@ -1889,19 +2059,36 @@ export class SwapService {
    */
   async submitSecret(params: FusionSecretRequest): Promise<FusionSecretResponse> {
     try {
-      logger.info('Submitting secret for Fusion+ order', { 
+      logger.info('Submitting secret for Fusion+ MEV-protected order', { 
         orderId: params.orderId,
-        userAddress: params.userAddress 
+        userAddress: params.userAddress,
+        nonce: params.nonce,
+        timestamp: Date.now(),
+        service: 'cipherswap-api'
       });
       
       // Validate secret request
       const validation = this.validateSecretRequest(params);
       if (!validation.isValid) {
+        logger.warn('Secret submission validation failed', {
+          errors: validation.errors,
+          orderId: params.orderId,
+          userAddress: params.userAddress,
+          timestamp: Date.now(),
+          service: 'cipherswap-api'
+        });
         return {
           success: false,
           error: validation.errors.join(', ')
         };
       }
+      
+      logger.info('Secret validation passed, checking escrow status', {
+        orderId: params.orderId,
+        userAddress: params.userAddress,
+        timestamp: Date.now(),
+        service: 'cipherswap-api'
+      });
       
       // Check if escrow is ready first
       const escrowResponse = await this.checkEscrowStatus({
@@ -1910,6 +2097,13 @@ export class SwapService {
       });
       
       if (!escrowResponse.success) {
+        logger.error('Escrow status check failed', {
+          error: escrowResponse.error,
+          orderId: params.orderId,
+          userAddress: params.userAddress,
+          timestamp: Date.now(),
+          service: 'cipherswap-api'
+        });
         return {
           success: false,
           error: escrowResponse.error
@@ -1917,11 +2111,26 @@ export class SwapService {
       }
       
       if (!escrowResponse.data?.isReady) {
+        logger.warn('Escrow not ready for secret submission', {
+          orderId: params.orderId,
+          userAddress: params.userAddress,
+          escrowStatus: escrowResponse.data,
+          timestamp: Date.now(),
+          service: 'cipherswap-api'
+        });
         return {
           success: false,
           error: 'Escrow is not ready for secret submission'
         };
       }
+      
+      logger.info('Escrow ready, submitting secret to Fusion+ API', {
+        orderId: params.orderId,
+        userAddress: params.userAddress,
+        escrowStatus: escrowResponse.data,
+        timestamp: Date.now(),
+        service: 'cipherswap-api'
+      });
       
       // Submit secret to 1inch Fusion+ API
       const response: AxiosResponse = await axios.post(`${this.baseUrl}/fusion/v1.0/secret`, {
@@ -1939,16 +2148,28 @@ export class SwapService {
         timeout: 15000
       });
       
+      logger.info('Fusion+ secret API response received', {
+        status: response.status,
+        secretId: response.data?.secretId,
+        orderId: params.orderId,
+        timestamp: Date.now(),
+        service: 'cipherswap-api'
+      });
+      
       // Format secret data
       const secretData = this.formatSecretResponse(response.data, params, escrowResponse.data);
       
       // Store secret data
       this.secretsHistory.set(secretData.secretId, secretData);
       
-      logger.info('Secret submitted successfully', { 
+      logger.info('Secret submitted successfully for MEV-protected order', { 
         secretId: secretData.secretId,
         orderId: params.orderId,
-        status: secretData.status
+        userAddress: params.userAddress,
+        status: secretData.status,
+        escrowStatus: escrowResponse.data,
+        timestamp: Date.now(),
+        service: 'cipherswap-api'
       });
       
       return {
@@ -1957,10 +2178,15 @@ export class SwapService {
       };
       
     } catch (error: any) {
-      logger.error('Secret submission error', { 
-        error: error.message, 
-        params,
-        status: error.response?.status 
+      logger.error('Secret submission error for MEV-protected order', { 
+        error: error.message,
+        stack: error.stack,
+        orderId: params.orderId,
+        userAddress: params.userAddress,
+        status: error.response?.status,
+        responseData: error.response?.data,
+        timestamp: Date.now(),
+        service: 'cipherswap-api'
       });
       
       return {
@@ -1982,16 +2208,34 @@ export class SwapService {
     maxWaitTime: number = SWAP_CONSTANTS.MAX_ESCROW_WAIT_TIME
   ): Promise<FusionSecretResponse> {
     try {
-      logger.info('Waiting for escrow and submitting secret', { 
+      logger.info('Starting escrow wait and secret submission for MEV-protected order', { 
         orderId, 
         userAddress,
-        maxWaitTime 
+        nonce,
+        maxWaitTime,
+        checkInterval: SWAP_CONSTANTS.ESCROW_CHECK_INTERVAL,
+        timestamp: Date.now(),
+        service: 'cipherswap-api'
       });
       
       const startTime = Date.now();
       const checkInterval = SWAP_CONSTANTS.ESCROW_CHECK_INTERVAL;
+      let checkCount = 0;
       
       while (Date.now() - startTime < maxWaitTime) {
+        checkCount++;
+        const elapsedTime = Date.now() - startTime;
+        
+        logger.info(`Escrow check #${checkCount} for MEV-protected order`, {
+          orderId,
+          userAddress,
+          checkCount,
+          elapsedTime,
+          remainingTime: maxWaitTime - elapsedTime,
+          timestamp: Date.now(),
+          service: 'cipherswap-api'
+        });
+        
         // Check escrow status
         const escrowResponse = await this.checkEscrowStatus({
           orderId,
@@ -1999,13 +2243,43 @@ export class SwapService {
         });
         
         if (!escrowResponse.success) {
+          logger.error('Escrow status check failed during wait', {
+            error: escrowResponse.error,
+            orderId,
+            userAddress,
+            checkCount,
+            elapsedTime,
+            timestamp: Date.now(),
+            service: 'cipherswap-api'
+          });
           return {
             success: false,
             error: escrowResponse.error
           };
         }
         
+        logger.info(`Escrow status check #${checkCount} result`, {
+          orderId,
+          userAddress,
+          checkCount,
+          isReady: escrowResponse.data?.isReady,
+          escrowStatus: escrowResponse.data,
+          elapsedTime,
+          timestamp: Date.now(),
+          service: 'cipherswap-api'
+        });
+        
         if (escrowResponse.data?.isReady) {
+          logger.info('Escrow ready, proceeding with secret submission', {
+            orderId,
+            userAddress,
+            checkCount,
+            elapsedTime,
+            escrowStatus: escrowResponse.data,
+            timestamp: Date.now(),
+            service: 'cipherswap-api'
+          });
+          
           // Escrow is ready, submit secret
           return await this.submitSecret({
             orderId,
@@ -2016,9 +2290,29 @@ export class SwapService {
           });
         }
         
+        logger.info(`Escrow not ready, waiting ${checkInterval}ms before next check`, {
+          orderId,
+          userAddress,
+          checkCount,
+          elapsedTime,
+          remainingTime: maxWaitTime - elapsedTime,
+          timestamp: Date.now(),
+          service: 'cipherswap-api'
+        });
+        
         // Wait before next check
         await new Promise(resolve => setTimeout(resolve, checkInterval));
       }
+      
+      logger.warn('Escrow wait timeout reached', {
+        orderId,
+        userAddress,
+        checkCount,
+        totalWaitTime: Date.now() - startTime,
+        maxWaitTime,
+        timestamp: Date.now(),
+        service: 'cipherswap-api'
+      });
       
       return {
         success: false,
@@ -2026,10 +2320,15 @@ export class SwapService {
       };
       
     } catch (error: any) {
-      logger.error('Wait for escrow and submit secret error', { 
-        error: error.message, 
+      logger.error('Wait for escrow and submit secret error for MEV-protected order', { 
+        error: error.message,
+        stack: error.stack,
         orderId,
-        userAddress 
+        userAddress,
+        nonce,
+        maxWaitTime,
+        timestamp: Date.now(),
+        service: 'cipherswap-api'
       });
       
       return {
@@ -2793,23 +3092,52 @@ export class SwapService {
     config: MEVProtectionConfig
   ): Promise<FlashbotsBundleResponse> {
     try {
-      logger.info('Creating Flashbots bundle', { 
+      logger.info('Creating Flashbots MEV-protection bundle', { 
         transactionCount: transactions.length, 
         userAddress,
-        config 
+        config: {
+          targetBlock: config.targetBlock,
+          maxBlockNumber: config.maxBlockNumber,
+          refundRecipient: config.refundRecipient,
+          refundPercent: config.refundPercent,
+          useFlashbots: config.useFlashbots
+        },
+        timestamp: Date.now(),
+        service: 'cipherswap-api'
       });
 
       // Validate transactions first
       const validation = this.validateBundleTransactions(transactions);
       if (!validation.isValid) {
+        logger.warn('Flashbots bundle validation failed', {
+          errors: validation.errors,
+          transactionCount: transactions.length,
+          userAddress,
+          timestamp: Date.now(),
+          service: 'cipherswap-api'
+        });
         return {
           success: false,
           error: validation.errors.join(', ')
         };
       }
 
+      logger.info('Flashbots bundle validation passed', {
+        transactionCount: transactions.length,
+        userAddress,
+        timestamp: Date.now(),
+        service: 'cipherswap-api'
+      });
+
       // Check Flashbots provider after validation
       if (!this.flashbotsProvider) {
+        logger.info('Flashbots provider not available, creating mock bundle', {
+          userAddress,
+          transactionCount: transactions.length,
+          timestamp: Date.now(),
+          service: 'cipherswap-api'
+        });
+        
         // In test environment, return mock response
         const bundleData: FlashbotsBundleData = {
           bundleId: `bundle_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
@@ -2831,9 +3159,13 @@ export class SwapService {
         // Store bundle data
         this.bundleHistory.set(bundleData.bundleId, bundleData);
 
-        logger.info('Flashbots bundle created (mock)', { 
+        logger.info('Flashbots MEV-protection bundle created (mock)', { 
           bundleId: bundleData.bundleId,
-          targetBlock: bundleData.targetBlock
+          targetBlock: bundleData.targetBlock,
+          transactionCount: transactions.length,
+          userAddress,
+          timestamp: Date.now(),
+          service: 'cipherswap-api'
         });
 
         return {
@@ -2841,6 +3173,14 @@ export class SwapService {
           data: bundleData
         };
       }
+
+      logger.info('Flashbots provider available, creating bundle request', {
+        transactionCount: transactions.length,
+        targetBlock: config.targetBlock,
+        userAddress,
+        timestamp: Date.now(),
+        service: 'cipherswap-api'
+      });
 
       // Create bundle request
       const bundleRequest: FlashbotsBundleRequest = {
@@ -2854,18 +3194,51 @@ export class SwapService {
         refundPercent: config.refundPercent
       };
 
+      logger.info('Simulating Flashbots bundle before submission', {
+        transactionCount: transactions.length,
+        targetBlock: config.targetBlock,
+        userAddress,
+        timestamp: Date.now(),
+        service: 'cipherswap-api'
+      });
+
       // Simulate bundle first
       const simulation = await this.simulateBundle(bundleRequest);
       if (!simulation.success) {
+        logger.error('Flashbots bundle simulation failed', {
+          error: simulation.error,
+          transactionCount: transactions.length,
+          targetBlock: config.targetBlock,
+          userAddress,
+          timestamp: Date.now(),
+          service: 'cipherswap-api'
+        });
         return {
           success: false,
           error: `Bundle simulation failed: ${simulation.error}`
         };
       }
 
+      logger.info('Flashbots bundle simulation successful, submitting bundle', {
+        simulation: simulation.data,
+        transactionCount: transactions.length,
+        targetBlock: config.targetBlock,
+        userAddress,
+        timestamp: Date.now(),
+        service: 'cipherswap-api'
+      });
+
       // Submit bundle
       const bundleResponse = await this.submitBundle(bundleRequest, userAddress);
       if (!bundleResponse.success) {
+        logger.error('Flashbots bundle submission failed', {
+          error: bundleResponse.error,
+          transactionCount: transactions.length,
+          targetBlock: config.targetBlock,
+          userAddress,
+          timestamp: Date.now(),
+          service: 'cipherswap-api'
+        });
         return {
           success: false,
           error: bundleResponse.error
@@ -2875,17 +3248,34 @@ export class SwapService {
       // Store bundle data
       this.bundleHistory.set(bundleResponse.data!.bundleId, bundleResponse.data!);
 
-      logger.info('Flashbots bundle created successfully', { 
+      logger.info('Flashbots MEV-protection bundle created successfully', { 
         bundleId: bundleResponse.data!.bundleId,
-        targetBlock: bundleResponse.data!.targetBlock
+        targetBlock: bundleResponse.data!.targetBlock,
+        transactionCount: transactions.length,
+        userAddress,
+        status: bundleResponse.data!.status,
+        gasEstimate: bundleResponse.data!.gasEstimate,
+        gasPrice: bundleResponse.data!.gasPrice,
+        refundRecipient: bundleResponse.data!.refundRecipient,
+        refundPercent: bundleResponse.data!.refundPercent,
+        timestamp: Date.now(),
+        service: 'cipherswap-api'
       });
 
       return bundleResponse;
 
     } catch (error: any) {
-      logger.error('Flashbots bundle creation error', { 
-        error: error.message, 
-        userAddress 
+      logger.error('Flashbots MEV-protection bundle creation error', { 
+        error: error.message,
+        stack: error.stack,
+        transactionCount: transactions.length,
+        userAddress,
+        config: {
+          targetBlock: config.targetBlock,
+          refundRecipient: config.refundRecipient
+        },
+        timestamp: Date.now(),
+        service: 'cipherswap-api'
       });
 
       return {
@@ -3203,21 +3593,49 @@ export class SwapService {
     userAddress: string
   ): Promise<FlashbotsBundleResponse> {
     try {
-      logger.info('Submitting Flashbots bundle', { 
+      logger.info('Submitting Flashbots MEV-protection bundle', { 
         transactionCount: bundleRequest.transactions.length,
-        userAddress 
+        userAddress,
+        targetBlock: bundleRequest.targetBlock,
+        maxBlockNumber: bundleRequest.maxBlockNumber,
+        refundRecipient: bundleRequest.refundRecipient,
+        refundPercent: bundleRequest.refundPercent,
+        timestamp: Date.now(),
+        service: 'cipherswap-api'
       });
 
       if (!this.flashbotsProvider) {
+        logger.error('Flashbots provider not initialized for bundle submission', {
+          userAddress,
+          transactionCount: bundleRequest.transactions.length,
+          timestamp: Date.now(),
+          service: 'cipherswap-api'
+        });
         return {
           success: false,
           error: 'Flashbots provider not initialized'
         };
       }
 
+      logger.info('Flashbots provider available, getting current block number', {
+        userAddress,
+        transactionCount: bundleRequest.transactions.length,
+        timestamp: Date.now(),
+        service: 'cipherswap-api'
+      });
+
       // Get current block number
       const currentBlock = await this.ethersProvider!.getBlockNumber();
       const targetBlock = bundleRequest.targetBlock || currentBlock + 1;
+
+      logger.info('Block information retrieved for bundle submission', {
+        currentBlock,
+        targetBlock,
+        userAddress,
+        transactionCount: bundleRequest.transactions.length,
+        timestamp: Date.now(),
+        service: 'cipherswap-api'
+      });
 
       // For now, return a mock bundle response
       // In a real implementation, you would use the Flashbots API
@@ -3238,10 +3656,19 @@ export class SwapService {
         lastSubmissionAttempt: Date.now(),
       };
 
-      logger.info('Bundle submitted successfully', { 
+      logger.info('Flashbots MEV-protection bundle submitted successfully', { 
         bundleId: bundleData.bundleId,
         bundleHash: bundleData.bundleHash,
-        targetBlock 
+        targetBlock,
+        transactionCount: bundleRequest.transactions.length,
+        userAddress,
+        gasEstimate: bundleData.gasEstimate,
+        gasPrice: bundleData.gasPrice,
+        refundRecipient: bundleData.refundRecipient,
+        refundPercent: bundleData.refundPercent,
+        status: bundleData.status,
+        timestamp: Date.now(),
+        service: 'cipherswap-api'
       });
 
       return {
@@ -3250,7 +3677,15 @@ export class SwapService {
       };
 
     } catch (error: any) {
-      logger.error('Bundle submission error', { error: error.message });
+      logger.error('Flashbots MEV-protection bundle submission error', { 
+        error: error.message,
+        stack: error.stack,
+        userAddress,
+        transactionCount: bundleRequest.transactions.length,
+        targetBlock: bundleRequest.targetBlock,
+        timestamp: Date.now(),
+        service: 'cipherswap-api'
+      });
       return {
         success: false,
         error: this.handleFlashbotsError(error)
