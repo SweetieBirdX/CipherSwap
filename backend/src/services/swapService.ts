@@ -1,5 +1,6 @@
 import axios, { AxiosResponse } from 'axios';
 import { config } from '../config/env';
+import { config as importedConfig } from '../config/env';
 import { logger } from '../utils/logger';
 import { 
   SwapRequest, 
@@ -34,7 +35,8 @@ import {
   FlashbotsSimulationResponse,
   GasEstimateRequest,
   GasEstimateResponse,
-  MEVProtectionConfig
+  MEVProtectionConfig,
+  BundleRetryConfig
 } from '../types/swap';
 import { ethers } from 'ethers';
 import { FlashbotsBundleProvider } from 'flashbots-ethers-v6-provider-bundle';
@@ -104,57 +106,211 @@ export class SwapService {
           error: validation.errors.join(', ')
         };
       }
-      
-      // Get quote first
-      const quoteResponse = await this.getQuote(params);
-      if (!quoteResponse.success) {
+
+      // Get quote
+      const quoteData = await this.getQuote(params);
+      if (!quoteData) {
         return {
           success: false,
-          error: quoteResponse.error
+          error: 'Failed to get quote'
         };
       }
-      
-      // Call 1inch swap API
-      const response: AxiosResponse = await axios.post(`${this.baseUrl}/swap/v5.2/swap`, {
-        src: params.fromToken,
-        dst: params.toToken,
-        amount: params.amount,
-        from: params.userAddress,
-        slippage: params.slippage || SWAP_CONSTANTS.DEFAULT_SLIPPAGE,
-        chain: params.chainId,
-        apiKey: this.apiKey
-      }, {
-        timeout: 15000 // 15 second timeout
-      });
-      
-      // Format swap data
-      const swapData = this.formatSwapResponse(response.data, params, quoteResponse.data);
-      
-      // Store swap data
+
+      // Create swap with retry and fallback if MEV protection is enabled
+      if (params.useMEVProtection) {
+        return await this.createSwapWithMEVProtection(params, quoteData);
+      }
+
+      // Regular swap creation
+      const response = await axios.post(
+        `${this.baseUrl}/swap/v6.0/${params.chainId}`,
+        {
+          src: params.fromToken,
+          dst: params.toToken,
+          amount: params.amount,
+          from: params.userAddress,
+          slippage: params.slippage || 0.5,
+          deadline: params.deadline || Math.floor(Date.now() / 1000) + 1200,
+          permit: params.permit
+        },
+        {
+          headers: {
+            'Authorization': `Bearer ${this.apiKey}`,
+            'Accept': 'application/json'
+          }
+        }
+      );
+
+      const swapData = this.formatSwapResponse(response.data, params, quoteData);
       this.swapHistory.set(swapData.swapId, swapData);
-      
-      logger.info('Swap created successfully', { 
-        swapId: swapData.swapId,
-        fromToken: params.fromToken,
-        toToken: params.toToken,
-        amount: params.amount
-      });
-      
+
+      logger.info('Swap created successfully', { swapId: swapData.swapId });
       return {
         success: true,
         data: swapData
       };
-      
+
     } catch (error: any) {
-      logger.error('Swap service error', { 
-        error: error.message, 
-        params,
-        status: error.response?.status 
-      });
-      
+      logger.error('Swap creation error', { error: error.message });
       return {
         success: false,
         error: this.handleSwapError(error)
+      };
+    }
+  }
+
+  /**
+   * Create swap with MEV protection using Flashbots bundles
+   */
+  private async createSwapWithMEVProtection(
+    params: SwapRequest, 
+    quoteData: any
+  ): Promise<SwapResponse> {
+    try {
+      logger.info('Creating swap with MEV protection', { params });
+
+      // Create the swap transaction first
+      const swapResponse = await axios.post(
+        `${this.baseUrl}/swap/v6.0/${params.chainId}`,
+        {
+          src: params.fromToken,
+          dst: params.toToken,
+          amount: params.amount,
+          from: params.userAddress,
+          slippage: params.slippage || 0.5,
+          deadline: params.deadline || Math.floor(Date.now() / 1000) + 1200,
+          permit: params.permit
+        },
+        {
+          headers: {
+            'Authorization': `Bearer ${this.apiKey}`,
+            'Accept': 'application/json'
+          }
+        }
+      );
+
+      const swapData = this.formatSwapResponse(swapResponse.data, params, quoteData);
+      
+      // Create Flashbots bundle with retry logic
+      const mevConfig: MEVProtectionConfig = {
+        useFlashbots: true,
+        targetBlock: Math.floor(Date.now() / 1000) + 120, // Target block ~2 minutes from now
+        maxRetries: config.FLASHBOTS_MAX_RETRIES,
+        retryDelay: config.FLASHBOTS_RETRY_BASE_DELAY,
+        enableFallback: config.FLASHBOTS_ENABLE_FALLBACK,
+        fallbackGasPrice: config.FLASHBOTS_FALLBACK_GAS_PRICE,
+        fallbackSlippage: config.FLASHBOTS_FALLBACK_SLIPPAGE
+      };
+
+      const bundleResponse = await this.createFlashbotsBundleWithRetry(
+        [swapData.txHash!],
+        params.userAddress ?? '',
+        mevConfig
+      );
+
+      if (!bundleResponse.success) {
+        // If bundle fails, try fallback to regular transaction
+        if (config.FLASHBOTS_ENABLE_FALLBACK) {
+          logger.warn('Flashbots bundle failed, attempting fallback transaction', {
+            swapId: swapData.swapId,
+            error: bundleResponse.error
+          });
+          
+          return await this.createFallbackSwap(params, quoteData, String(bundleResponse.error ?? 'Unknown error'));
+        }
+        
+        return {
+          success: false,
+          error: `MEV protection failed: ${bundleResponse.error}`
+        };
+      }
+
+      // Update swap data with bundle information
+      swapData.bundleId = bundleResponse.data!.bundleId;
+      swapData.bundleHash = bundleResponse.data!.bundleHash;
+      this.swapHistory.set(swapData.swapId, swapData);
+
+      logger.info('Swap with MEV protection created successfully', { 
+        swapId: swapData.swapId,
+        bundleId: bundleResponse.data!.bundleId
+      });
+
+      return {
+        success: true,
+        data: swapData
+      };
+
+    } catch (error: any) {
+      logger.error('MEV protected swap creation error', { error: error.message });
+      return {
+        success: false,
+        error: this.handleSwapError(error)
+      };
+    }
+  }
+
+  /**
+   * Create fallback swap when Flashbots bundle fails
+   */
+  private async createFallbackSwap(
+    params: SwapRequest,
+    quoteData: any,
+    bundleError: string
+  ): Promise<SwapResponse> {
+    try {
+      logger.info('Creating fallback swap', { 
+        userAddress: params.userAddress,
+        bundleError 
+      });
+
+      // Adjust parameters for fallback
+      const fallbackParams = {
+        ...params,
+        slippage: config.FLASHBOTS_FALLBACK_SLIPPAGE,
+        gasPrice: config.FLASHBOTS_FALLBACK_GAS_PRICE
+      };
+
+      const response = await axios.post(
+        `${this.baseUrl}/swap/v6.0/${params.chainId}`,
+        {
+          src: params.fromToken,
+          dst: params.toToken,
+          amount: params.amount,
+          from: params.userAddress,
+          slippage: fallbackParams.slippage,
+          deadline: params.deadline || Math.floor(Date.now() / 1000) + 1200,
+          permit: params.permit,
+          gasPrice: fallbackParams.gasPrice
+        },
+        {
+          headers: {
+            'Authorization': `Bearer ${this.apiKey}`,
+            'Accept': 'application/json'
+          }
+        }
+      );
+
+      const swapData = this.formatSwapResponse(response.data, fallbackParams, quoteData);
+      swapData.fallbackUsed = true;
+      swapData.fallbackReason = bundleError;
+      
+      this.swapHistory.set(swapData.swapId, swapData);
+
+      logger.info('Fallback swap created successfully', { 
+        swapId: swapData.swapId,
+        fallbackReason: bundleError
+      });
+
+      return {
+        success: true,
+        data: swapData
+      };
+
+    } catch (error: any) {
+      logger.error('Fallback swap creation error', { error: error.message });
+      return {
+        success: false,
+        error: `Fallback failed: ${this.handleSwapError(error)}`
       };
     }
   }
@@ -1550,7 +1706,9 @@ export class SwapService {
           refundRecipient: config.refundRecipient,
           refundPercent: config.refundPercent,
           timestamp: Date.now(),
-          userAddress
+          userAddress,
+          submissionAttempts: 1,
+          lastSubmissionAttempt: Date.now(),
         };
 
         // Store bundle data
@@ -1618,6 +1776,229 @@ export class SwapService {
         error: this.handleFlashbotsError(error)
       };
     }
+  }
+
+  /**
+   * Create Flashbots bundle with retry logic
+   */
+  async createFlashbotsBundleWithRetry(
+    transactions: string[], 
+    userAddress: string,
+    config: MEVProtectionConfig
+  ): Promise<FlashbotsBundleResponse> {
+    const retryConfig: BundleRetryConfig = {
+      maxRetries: config.maxRetries ?? importedConfig.FLASHBOTS_MAX_RETRIES ?? 3,
+      baseDelay: config.retryDelay ?? importedConfig.FLASHBOTS_RETRY_BASE_DELAY ?? 1000,
+      maxDelay: importedConfig.FLASHBOTS_RETRY_MAX_DELAY ?? 30000,
+      backoffMultiplier: importedConfig.FLASHBOTS_RETRY_BACKOFF_MULTIPLIER ?? 2.0,
+      enableFallback: config.enableFallback ?? importedConfig.FLASHBOTS_ENABLE_FALLBACK ?? false,
+      fallbackGasPrice: config.fallbackGasPrice ?? importedConfig.FLASHBOTS_FALLBACK_GAS_PRICE ?? '25000000000',
+      fallbackSlippage: config.fallbackSlippage ?? importedConfig.FLASHBOTS_FALLBACK_SLIPPAGE ?? 0.5
+    };
+
+    let lastError: string | undefined;
+    let attempt = 0;
+
+    while (attempt <= retryConfig.maxRetries) {
+      try {
+        logger.info('Attempting Flashbots bundle creation', { 
+          attempt: attempt + 1,
+          maxRetries: retryConfig.maxRetries,
+          userAddress 
+        });
+
+        const bundleResponse = await this.createFlashbotsBundle(transactions, String(userAddress ?? ''), config);
+        
+        if (bundleResponse.success) {
+          // Add retry data to bundle
+          if (bundleResponse.data) {
+            bundleResponse.data.submissionAttempts = attempt + 1;
+            bundleResponse.data.lastSubmissionAttempt = Date.now();
+            
+            if (attempt > 0) {
+              bundleResponse.data.retryData = {
+                originalBundleId: bundleResponse.data.bundleId,
+                retryAttempts: [],
+                currentAttempt: attempt + 1,
+                maxRetries: retryConfig.maxRetries,
+                fallbackUsed: false,
+                finalStatus: bundleResponse.data.status
+              };
+            }
+          }
+
+          logger.info('Flashbots bundle created successfully with retry', { 
+            bundleId: bundleResponse.data?.bundleId,
+            attempts: attempt + 1
+          });
+
+          return bundleResponse;
+        }
+
+        lastError = bundleResponse.error;
+        logger.warn('Bundle creation failed, will retry', { 
+          attempt: attempt + 1,
+          error: lastError 
+        });
+
+      } catch (error: any) {
+        lastError = this.handleFlashbotsError(error);
+        logger.error('Bundle creation error, will retry', { 
+          attempt: attempt + 1,
+          error: lastError 
+        });
+      }
+
+      attempt++;
+
+      // If we haven't exceeded max retries, wait before next attempt
+      if (attempt <= retryConfig.maxRetries) {
+        const delay = Math.min(
+          retryConfig.baseDelay * Math.pow(retryConfig.backoffMultiplier, attempt - 1),
+          retryConfig.maxDelay
+        );
+
+        logger.info('Waiting before retry', { 
+          delay,
+          nextAttempt: attempt + 1 
+        });
+
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+    }
+
+    // All retries exhausted
+    logger.error('All bundle creation retries exhausted', { 
+      maxRetries: retryConfig.maxRetries,
+      finalError: lastError 
+    });
+
+    return {
+      success: false,
+      error: `Bundle creation failed after ${retryConfig.maxRetries} attempts: ${lastError}`
+    };
+  }
+
+  /**
+   * Retry a failed bundle with updated parameters
+   */
+  async retryBundle(
+    originalBundleId: string,
+    userAddress: string,
+    updatedConfig?: MEVProtectionConfig
+  ): Promise<FlashbotsBundleResponse> {
+    try {
+      const originalBundle = this.bundleHistory.get(originalBundleId);
+      if (!originalBundle) {
+        return {
+          success: false,
+          error: 'Original bundle not found'
+        };
+      }
+
+      if (originalBundle.userAddress !== userAddress) {
+        return {
+          success: false,
+          error: 'Unauthorized to retry this bundle'
+        };
+      }
+
+      // Check if bundle is eligible for retry
+      if (!this.isBundleRetryable(originalBundle)) {
+        return {
+          success: false,
+          error: 'Bundle is not eligible for retry'
+        };
+      }
+
+      logger.info('Retrying bundle', { 
+        originalBundleId,
+        userAddress 
+      });
+
+      // Extract transactions from original bundle
+      const transactions = originalBundle.transactions.map(tx => tx.transaction);
+      
+      // Use updated config or original config
+      const retryConfig: MEVProtectionConfig = {
+        useFlashbots: true,
+        targetBlock: updatedConfig?.targetBlock ?? ((originalBundle.targetBlock ?? 12345678) + 1),
+        maxRetries: (
+          updatedConfig?.maxRetries !== undefined
+            ? Number(updatedConfig.maxRetries)
+            : importedConfig.FLASHBOTS_MAX_RETRIES !== undefined
+              ? Number(importedConfig.FLASHBOTS_MAX_RETRIES)
+              : 3
+        ),
+        retryDelay: updatedConfig?.retryDelay ?? importedConfig.FLASHBOTS_RETRY_BASE_DELAY ?? 1000,
+        enableFallback: updatedConfig?.enableFallback ?? importedConfig.FLASHBOTS_ENABLE_FALLBACK ?? false,
+        fallbackGasPrice: updatedConfig?.fallbackGasPrice ?? importedConfig.FLASHBOTS_FALLBACK_GAS_PRICE ?? '25000000000',
+        fallbackSlippage: updatedConfig?.fallbackSlippage ?? importedConfig.FLASHBOTS_FALLBACK_SLIPPAGE ?? 0.5
+      };
+
+      const retryResponse = await this.createFlashbotsBundleWithRetry(
+        transactions,
+        userAddress,
+        retryConfig
+      );
+
+      if (retryResponse.success && retryResponse.data) {
+        // Link retry to original bundle
+        retryResponse.data.retryData = {
+          originalBundleId,
+          retryAttempts: originalBundle.retryData?.retryAttempts || [],
+          currentAttempt: (originalBundle.retryData?.currentAttempt || 0) + 1,
+          maxRetries: Number(retryConfig.maxRetries) || 3,
+          lastError: originalBundle.retryData?.lastError,
+          fallbackUsed: false,
+          finalStatus: retryResponse.data.status
+        };
+
+        // Update original bundle status
+        originalBundle.status = BundleStatus.FAILED;
+        originalBundle.retryData = retryResponse.data.retryData;
+        this.bundleHistory.set(originalBundleId, originalBundle);
+      }
+
+      return retryResponse;
+
+    } catch (error: any) {
+      logger.error('Bundle retry error', { error: error.message });
+      return {
+        success: false,
+        error: this.handleFlashbotsError(error)
+      };
+    }
+  }
+
+  /**
+   * Check if a bundle is eligible for retry
+   */
+  private isBundleRetryable(bundle: FlashbotsBundleData): boolean {
+    // Check if bundle has failed status
+    if (bundle.status !== BundleStatus.FAILED && 
+        bundle.status !== BundleStatus.EXPIRED && 
+        bundle.status !== BundleStatus.REVERTED) {
+      return false;
+    }
+
+    // Check if we haven't exceeded max retries
+    const currentAttempts = bundle.retryData?.currentAttempt || 0;
+    const maxRetries = bundle.retryData?.maxRetries ?? importedConfig.FLASHBOTS_MAX_RETRIES ?? 3;
+    
+    if (currentAttempts >= maxRetries) {
+      return false;
+    }
+
+    // Check if bundle hasn't expired (within reasonable time)
+    const bundleAge = Date.now() - bundle.timestamp;
+    const maxAge = 30 * 60 * 1000; // 30 minutes
+    
+    if (bundleAge > maxAge) {
+      return false;
+    }
+
+    return true;
   }
 
   /**
@@ -1735,7 +2116,9 @@ export class SwapService {
         refundRecipient: bundleRequest.refundRecipient,
         refundPercent: bundleRequest.refundPercent,
         timestamp: Date.now(),
-        userAddress
+        userAddress,
+        submissionAttempts: 1,
+        lastSubmissionAttempt: Date.now(),
       };
 
       logger.info('Bundle submitted successfully', { 

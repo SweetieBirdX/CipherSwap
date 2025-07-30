@@ -9,6 +9,7 @@ export interface SwapRequest {
   userAddress: string;
   deadline?: number;
   permit?: any; // For Fusion+ permit
+  useMEVProtection?: boolean; // Enable MEV protection with Flashbots
 }
 
 export interface SwapResponse {
@@ -33,6 +34,11 @@ export interface SwapData {
   timestamp: number;
   route?: RouteStep[];
   fusionData?: FusionData;
+  // MEV protection and fallback data
+  bundleId?: string;
+  bundleHash?: string;
+  fallbackUsed?: boolean;
+  fallbackReason?: string;
 }
 
 export enum SwapStatus {
@@ -303,6 +309,11 @@ export interface FlashbotsBundleData {
   timestamp: number;
   userAddress: string;
   simulationResult?: BundleSimulationResult;
+  // Retry and fallback data
+  retryData?: BundleRetryData;
+  fallbackData?: BundleFallbackData;
+  submissionAttempts: number;
+  lastSubmissionAttempt?: number;
 }
 
 export enum BundleStatus {
@@ -364,4 +375,49 @@ export interface MEVProtectionConfig {
   minTimestamp?: number;
   maxTimestamp?: number;
   revertingTxHashes?: string[];
+  // Retry configuration
+  maxRetries?: number;
+  retryDelay?: number;
+  enableFallback?: boolean;
+  fallbackGasPrice?: string;
+  fallbackSlippage?: number;
+}
+
+// Retry and Fallback Types
+export interface BundleRetryConfig {
+  maxRetries: number;
+  baseDelay: number;
+  maxDelay: number;
+  backoffMultiplier: number;
+  enableFallback: boolean;
+  fallbackGasPrice?: string;
+  fallbackSlippage?: number;
+}
+
+export interface BundleRetryAttempt {
+  attempt: number;
+  timestamp: number;
+  error?: string;
+  bundleHash?: string;
+  targetBlock: number;
+  gasPrice?: string;
+}
+
+export interface BundleRetryData {
+  originalBundleId: string;
+  retryAttempts: BundleRetryAttempt[];
+  currentAttempt: number;
+  maxRetries: number;
+  lastError?: string;
+  fallbackUsed: boolean;
+  finalStatus: BundleStatus;
+}
+
+export interface BundleFallbackData {
+  originalBundleId: string;
+  fallbackTxHash?: string;
+  fallbackGasPrice: string;
+  fallbackSlippage: number;
+  fallbackStatus: BundleStatus;
+  timestamp: number;
 } 
