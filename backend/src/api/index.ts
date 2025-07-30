@@ -3,10 +3,12 @@ import quoteRoutes from './routes/quoteRoutes';
 import swapRoutes from './routes/swapRoutes';
 import predicateRoutes from './routes/predicateRoutes';
 import oracleRoutes from './routes/oracleRoutes';
+import docsRoutes from './routes/docsRoutes';
 
 const apiRouter = Router();
 
 // API Documentation
+apiRouter.use('/docs', docsRoutes);
 const apiDocs = {
   name: 'CipherSwap API',
   version: '1.0.0',
