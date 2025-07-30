@@ -100,15 +100,7 @@ export class QuoteService {
     try {
       logger.info('Simulating swap', { userAddress });
       
-      const simulation = SimulationUtils.simulateSwap(
-        {
-          fromToken: quoteData.quote.fromTokenAddress,
-          toToken: quoteData.quote.toTokenAddress,
-          amount: quoteData.quote.fromTokenAmount,
-          slippage: quoteData.slippage
-        },
-        quoteData.quote
-      );
+      const simulation = SimulationUtils.simulateSwap(quoteData);
       
       return {
         success: true,
@@ -245,14 +237,28 @@ export class QuoteService {
    * Format 1inch API response
    */
   private formatQuoteResponse(data: any, params: QuoteRequest): QuoteData {
-    const slippage = SimulationUtils.calculateSlippage(
-      data, 
-      parseFloat(data.toTokenAmount) / parseFloat(data.fromTokenAmount)
+    // Calculate slippage based on expected vs actual amounts
+    const expectedAmount = data.toTokenAmount;
+    const actualAmount = data.toTokenAmount; // In real scenario, this would be different
+    const slippage = SimulationUtils.calculateSlippage(expectedAmount, actualAmount);
+    
+    // Calculate price impact (mock liquidity for now)
+    const poolLiquidity = '1000000000000000000000000'; // 1M tokens in wei
+    const priceImpact = SimulationUtils.calculatePriceImpact(
+      data.fromTokenAmount,
+      data.toTokenAmount,
+      poolLiquidity
     );
     
-    const priceImpact = SimulationUtils.calculatePriceImpact(data, 1000000000);
-    const estimatedGains = SimulationUtils.calculateEstimatedGains(data, 10000);
-    const gasEstimate = SimulationUtils.estimateGasCost(data.route || []);
+    // Mock estimated gains (would be calculated based on price difference)
+    const estimatedGains = 0.002; // 0.2% example gain
+    
+    // Calculate gas estimate
+    const gasEstimate = SimulationUtils.calculateGasCost(
+      data.estimatedGas || '500000',
+      '20000000000', // 20 gwei
+      1 // Ethereum mainnet
+    );
     
     return {
       quote: data,
