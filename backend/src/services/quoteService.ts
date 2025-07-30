@@ -51,10 +51,11 @@ export class QuoteService {
           src: params.fromToken,
           dst: params.toToken,
           amount: params.amount,
-          chain: params.chainId
+          chain: params.chainId,
+          from: params.userAddress
         },
         headers: {
-          'Authorization': this.apiKey,
+          'Authorization': `Bearer ${this.apiKey}`,
           'Accept': 'application/json'
         },
         timeout: 10000 // 10 second timeout
@@ -313,7 +314,7 @@ export class QuoteService {
           chain: chainId
         },
         headers: {
-          'Authorization': this.apiKey,
+          'Authorization': `Bearer ${this.apiKey}`,
           'Accept': 'application/json'
         },
         timeout: 10000
@@ -346,9 +347,9 @@ export class QuoteService {
   private getFallbackTokens(chainId: number): any[] {
     const commonTokens = {
       1: [ // Ethereum Mainnet
-        { address: '0xA0b86a33E6441b8c4C8C0C8C0C8C0C8C0C8C0C8C', symbol: 'ETH', name: 'Ethereum', decimals: 18 },
+        { address: '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2', symbol: 'WETH', name: 'Wrapped Ether', decimals: 18 },
         { address: '0xdAC17F958D2ee523a2206206994597C13D831ec7', symbol: 'USDT', name: 'Tether USD', decimals: 6 },
-        { address: '0xA0b86a33E6441b8c4C8C0C8C0C8C0C8C0C8C0C8C', symbol: 'USDC', name: 'USD Coin', decimals: 6 },
+        { address: '0xA0b86991c6218b36c1d19d4a2e9eb0ce3606eb48', symbol: 'USDC', name: 'USD Coin', decimals: 6 },
         { address: '0x6B175474E89094C44Da98b954EedeAC495271d0F', symbol: 'DAI', name: 'Dai Stablecoin', decimals: 18 },
         { address: '0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599', symbol: 'WBTC', name: 'Wrapped Bitcoin', decimals: 8 }
       ],
