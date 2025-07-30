@@ -43,6 +43,134 @@ export enum SwapStatus {
   EXPIRED = 'expired'
 }
 
+// Limit Order Types
+export interface LimitOrderRequest {
+  fromToken: string;
+  toToken: string;
+  amount: string;
+  chainId: number;
+  userAddress: string;
+  limitPrice: string;
+  orderType: 'buy' | 'sell';
+  deadline?: number;
+  permit?: any;
+}
+
+export interface LimitOrderResponse {
+  success: boolean;
+  data?: LimitOrderData;
+  error?: string;
+}
+
+export interface LimitOrderData {
+  orderId: string;
+  txHash?: string;
+  status: LimitOrderStatus;
+  fromToken: string;
+  toToken: string;
+  fromAmount: string;
+  toAmount: string;
+  limitPrice: string;
+  orderType: 'buy' | 'sell';
+  gasEstimate: string;
+  gasPrice?: string;
+  deadline: number;
+  userAddress: string;
+  timestamp: number;
+  route?: RouteStep[];
+  fusionData?: FusionData;
+}
+
+export enum LimitOrderStatus {
+  PENDING = 'pending',
+  EXECUTED = 'executed',
+  CANCELLED = 'cancelled',
+  EXPIRED = 'expired',
+  FAILED = 'failed'
+}
+
+// Fusion+ Quote Types
+export interface FusionQuoteRequest {
+  fromToken: string;
+  toToken: string;
+  amount: string;
+  chainId: number;
+  userAddress: string;
+  limitPrice: string;
+  orderType: 'buy' | 'sell';
+}
+
+export interface FusionQuoteResponse {
+  success: boolean;
+  data?: any;
+  error?: string;
+}
+
+// Fusion+ Secrets and Escrow Types
+export interface FusionSecretRequest {
+  orderId: string;
+  userAddress: string;
+  secret: string;
+  signature: string;
+  nonce: number;
+}
+
+export interface FusionSecretResponse {
+  success: boolean;
+  data?: FusionSecretData;
+  error?: string;
+}
+
+export interface FusionSecretData {
+  secretId: string;
+  orderId: string;
+  userAddress: string;
+  status: SecretStatus;
+  timestamp: number;
+  escrowAddress?: string;
+  escrowReady: boolean;
+  secretHash?: string;
+  submissionTxHash?: string;
+}
+
+export enum SecretStatus {
+  PENDING = 'pending',
+  SUBMITTED = 'submitted',
+  CONFIRMED = 'confirmed',
+  FAILED = 'failed',
+  EXPIRED = 'expired'
+}
+
+export interface EscrowStatusRequest {
+  orderId: string;
+  userAddress: string;
+}
+
+export interface EscrowStatusResponse {
+  success: boolean;
+  data?: EscrowStatusData;
+  error?: string;
+}
+
+export interface EscrowStatusData {
+  orderId: string;
+  escrowAddress: string;
+  isReady: boolean;
+  readyTimestamp?: number;
+  expirationTimestamp: number;
+  depositedAmount: string;
+  requiredAmount: string;
+  status: EscrowStatus;
+}
+
+export enum EscrowStatus {
+  PENDING = 'pending',
+  READY = 'ready',
+  EXPIRED = 'expired',
+  COMPLETED = 'completed',
+  FAILED = 'failed'
+}
+
 export interface RouteStep {
   fromToken: string;
   toToken: string;
@@ -58,6 +186,8 @@ export interface FusionData {
   deadline: number;
   nonce: number;
   signature?: string;
+  secret?: string;
+  escrowAddress?: string;
 }
 
 export interface SwapHistory {
@@ -115,7 +245,10 @@ export enum SwapErrorCodes {
   INVALID_AMOUNT = 'INVALID_AMOUNT',
   SWAP_NOT_FOUND = 'SWAP_NOT_FOUND',
   SWAP_EXPIRED = 'SWAP_EXPIRED',
-  UNAUTHORIZED_CANCEL = 'UNAUTHORIZED_CANCEL'
+  UNAUTHORIZED_CANCEL = 'UNAUTHORIZED_CANCEL',
+  ESCROW_NOT_READY = 'ESCROW_NOT_READY',
+  SECRET_INVALID = 'SECRET_INVALID',
+  SECRET_EXPIRED = 'SECRET_EXPIRED'
 }
 
 // Constants
@@ -126,5 +259,8 @@ export const SWAP_CONSTANTS = {
   DEFAULT_SLIPPAGE: 0.5, // 0.5%
   DEFAULT_DEADLINE: 1800, // 30 minutes
   SWAP_CACHE_DURATION: 30000, // 30 seconds
-  MAX_SWAP_HISTORY: 100
+  MAX_SWAP_HISTORY: 100,
+  ESCROW_CHECK_INTERVAL: 5000, // 5 seconds
+  SECRET_SUBMISSION_TIMEOUT: 60000, // 60 seconds
+  MAX_ESCROW_WAIT_TIME: 300000 // 5 minutes
 } as const; 
