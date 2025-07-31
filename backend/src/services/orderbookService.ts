@@ -15,6 +15,64 @@ import {
 } from '../types/orderbook';
 import { PredicateService } from './predicateService';
 
+// ====== LIMIT_ORDER_LOGIC (tolga) ======
+import { LimitOrder, MakerTraits, Address, randBigInt, HttpProviderConnector } from '@1inch/limit-order-sdk';
+import { Wallet } from 'ethers';
+
+/**
+ * 1inch Limit Order oluşturucu (sadece orderType: 'limit' için)
+ * @param params OrderbookRequest
+ * @param authKey 1inch API Auth Key
+ * @param maker Ethers Wallet instance
+ */
+export async function buildLimitOrder1inch(
+  params: OrderbookRequest,
+  authKey: string,
+  maker: Wallet
+): Promise<{ success: boolean; data?: any; error?: string }> {
+  try {
+    if (params.orderType !== 'limit') {
+      return { success: false, error: 'Only limit orders are supported by buildLimitOrder1inch.' };
+    }
+    const expiresIn = BigInt(params.deadline ?? 120); // seconds
+    const expiration = BigInt(Math.floor(Date.now() / 1000)) + expiresIn;
+    const UINT_40_MAX = (1n << 40n) - 1n;
+
+    const makerTraits = MakerTraits.default()
+      .withExpiration(expiration)
+      .withNonce(randBigInt(UINT_40_MAX));
+
+    // Create order directly without SDK (since SDK has import issues)
+    const order = new LimitOrder({
+      makerAsset: new Address(params.fromToken),
+      takerAsset: new Address(params.toToken),
+      makingAmount: BigInt(params.amount),
+      takingAmount: params.limitPrice ? BigInt(params.limitPrice) : BigInt(params.amount),
+      maker: new Address(maker.address),
+    }, makerTraits);
+
+    const typedData = order.getTypedData(params.chainId ?? 1);
+    const signature = await maker.signTypedData(
+      typedData.domain,
+      { Order: typedData.types.Order },
+      typedData.message
+    );
+
+    return {
+      success: true,
+      data: {
+        order,
+        signature,
+        orderHash: order.getOrderHash(params.chainId ?? 1),
+        expiration: Number(expiration),
+      },
+    };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}
+// ====== END LIMIT_ORDER_LOGIC ======
+
 export class OrderbookService {
   private orders: Map<string, OrderData> = new Map();
   private userOrders: Map<string, Set<string>> = new Map(); // userAddress -> Set<orderId>
@@ -50,6 +108,64 @@ export class OrderbookService {
           error: `Maximum orders per user exceeded (${ORDERBOOK_CONSTANTS.MAX_ORDERS_PER_USER})`
         };
       }
+      
+      // ====== LIMIT_ORDER_INTEGRATION (tolga) ======
+      // Handle limit orders with 1inch SDK integration
+      if (params.orderType === 'limit') {
+        try {
+          const { ethers } = await import('ethers');
+          const { config } = await import('../config/env');
+          
+          // Create wallet instance for signing
+          const provider = new ethers.JsonRpcProvider(config.ETHEREUM_RPC_URL);
+          const wallet = new ethers.Wallet(config.PRIVATE_KEY, provider);
+          
+          // Build 1inch limit order
+          const limitOrderResult = await buildLimitOrder1inch(
+            params,
+            config.INCH_LIMIT_ORDER_AUTH_KEY!,
+            wallet
+          );
+          
+          if (!limitOrderResult.success) {
+            logger.error('1inch limit order creation failed', {
+              error: limitOrderResult.error,
+              params,
+              service: 'cipherswap-orderbook'
+            });
+            return {
+              success: false,
+              error: `Limit order creation failed: ${limitOrderResult.error}`
+            };
+          }
+          
+          logger.info('1inch limit order created successfully', {
+            orderHash: limitOrderResult.data?.orderHash,
+            params,
+            service: 'cipherswap-orderbook'
+          });
+          
+          // Add 1inch order data to the order
+          params.metadata = {
+            ...params.metadata,
+            inchOrderHash: limitOrderResult.data?.orderHash,
+            inchSignature: limitOrderResult.data?.signature,
+            inchExpiration: limitOrderResult.data?.expiration
+          };
+          
+        } catch (error: any) {
+          logger.error('Limit order integration error', {
+            error: error.message,
+            params,
+            service: 'cipherswap-orderbook'
+          });
+          return {
+            success: false,
+            error: `Limit order integration failed: ${error.message}`
+          };
+        }
+      }
+      // ====== END LIMIT_ORDER_INTEGRATION ======
       
       // Create order data
       const orderData = this.formatOrderData(params);

@@ -96,6 +96,12 @@ export interface OrderbookRequest {
   useMEVProtection?: boolean;
   allowedSenders?: string[];
   maxSlippage?: number;
+  metadata?: {
+    inchOrderHash?: string;
+    inchSignature?: string;
+    inchExpiration?: number;
+    [key: string]: any;
+  };
 }
 
 export interface OrderbookResponse {
