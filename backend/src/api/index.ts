@@ -140,13 +140,13 @@ apiRouter.get('/health', (req, res) => {
 });
 
 // Register all routes
-apiRouter.use('/', quoteRoutes);
-apiRouter.use('/', swapRoutes);
-apiRouter.use('/', predicateRoutes);
-apiRouter.use('/', oracleRoutes);
-apiRouter.use('/', slippageRoutes);
-apiRouter.use('/', orderbookRoutes);
-apiRouter.use('/', rfqRoutes);
+apiRouter.use('/quote', quoteRoutes);
+apiRouter.use('/swap', swapRoutes);
+apiRouter.use('/predicate', predicateRoutes);
+apiRouter.use('/oracle', oracleRoutes);
+apiRouter.use('/slippage', slippageRoutes);
+apiRouter.use('/orderbook', orderbookRoutes);
+apiRouter.use('/rfq', rfqRoutes);
 
 // API Stats endpoint
 apiRouter.get('/stats', (req, res) => {
