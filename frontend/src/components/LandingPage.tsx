@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
+import LiveOracleTable from './LiveOracleTable'
 
 export default function LandingPage() {
   return (
@@ -101,11 +102,13 @@ export default function LandingPage() {
           Enterprise-grade OTC swaps with advanced MEV protection, intelligent split routing, 
           and zero slippage execution. Built for institutional traders and DAOs.
         </motion.p>
+
+        
         
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.7, duration: 0.8 }}
+          transition={{ delay: 0.9, duration: 0.8 }}
           className="flex flex-col sm:flex-row gap-4 justify-center items-center"
         >
           <Link
@@ -120,14 +123,14 @@ export default function LandingPage() {
         </motion.div>
       </motion.div>
 
-      {/* Features Grid */}
-      <div className="relative z-10 px-6 py-20">
-        <motion.div 
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.9, duration: 0.8 }}
-          className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-7xl mx-auto"
-        >
+             {/* Features Grid */}
+       <div className="relative z-10 px-6 py-20">
+         <motion.div 
+           initial={{ opacity: 0, y: 30 }}
+           animate={{ opacity: 1, y: 0 }}
+           transition={{ delay: 1.1, duration: 0.8 }}
+           className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-7xl mx-auto"
+         >
           <motion.div 
             whileHover={{ y: -10, scale: 1.02 }}
             className="group bg-gradient-to-br from-slate-800/50 to-slate-900/50 backdrop-blur-xl rounded-2xl p-8 border border-slate-700/50 hover:border-blue-500/50 transition-all duration-300"
@@ -166,59 +169,71 @@ export default function LandingPage() {
               Smart order routing and execution ensures minimal slippage even for large institutional trades.
             </p>
           </motion.div>
-        </motion.div>
-      </div>
+                 </motion.div>
+       </div>
 
-      {/* Stats Section */}
-      <motion.div 
-        initial={{ opacity: 0, y: 30 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 1.1, duration: 0.8 }}
-        className="relative z-10 text-center px-6 py-20"
-      >
+       {/* Live Oracle Table */}
+       <motion.div 
+         initial={{ opacity: 0, y: 30 }}
+         animate={{ opacity: 1, y: 0 }}
+         transition={{ delay: 1.2, duration: 0.8 }}
+         className="relative z-10 px-6 py-20"
+       >
+         <div className="max-w-7xl mx-auto">
+           <LiveOracleTable />
+         </div>
+       </motion.div>
+
+              {/* Stats Section */}
+        <motion.div 
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 1.4, duration: 0.8 }}
+          className="relative z-10 text-center px-6 py-20"
+        >
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8 max-w-5xl mx-auto">
           <div className="text-center group">
-            <motion.div 
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ delay: 1.3, type: "spring", stiffness: 200 }}
-              className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-blue-400 to-blue-500 bg-clip-text text-transparent mb-3 group-hover:scale-110 transition-transform duration-300"
-            >
-              $50M+
-            </motion.div>
+                         <motion.div 
+               initial={{ scale: 0 }}
+               animate={{ scale: 1 }}
+               transition={{ delay: 1.6, type: "spring", stiffness: 200 }}
+               className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-blue-400 to-blue-500 bg-clip-text text-transparent mb-3 group-hover:scale-110 transition-transform duration-300"
+             >
+               $50M+
+             </motion.div>
             <div className="text-gray-400 text-lg">Total Volume</div>
           </div>
           <div className="text-center group">
-            <motion.div 
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ delay: 1.4, type: "spring", stiffness: 200 }}
-              className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-purple-400 to-purple-500 bg-clip-text text-transparent mb-3 group-hover:scale-110 transition-transform duration-300"
-            >
-              99.9%
-            </motion.div>
+                         <motion.div 
+               initial={{ scale: 0 }}
+               animate={{ scale: 1 }}
+               transition={{ delay: 1.7, type: "spring", stiffness: 200 }}
+               className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-purple-400 to-purple-500 bg-clip-text text-transparent mb-3 group-hover:scale-110 transition-transform duration-300"
+             >
+               99.9%
+             </motion.div>
             <div className="text-gray-400 text-lg">Success Rate</div>
           </div>
           <div className="text-center group">
-            <motion.div 
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ delay: 1.5, type: "spring", stiffness: 200 }}
-              className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-green-400 to-green-500 bg-clip-text text-transparent mb-3 group-hover:scale-110 transition-transform duration-300"
-            >
-              0.1%
-            </motion.div>
+                         <motion.div 
+               initial={{ scale: 0 }}
+               animate={{ scale: 1 }}
+               transition={{ delay: 1.8, type: "spring", stiffness: 200 }}
+               className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-green-400 to-green-500 bg-clip-text text-transparent mb-3 group-hover:scale-110 transition-transform duration-300"
+             >
+               0.1%
+             </motion.div>
             <div className="text-gray-400 text-lg">Avg Slippage</div>
           </div>
           <div className="text-center group">
-            <motion.div 
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ delay: 1.6, type: "spring", stiffness: 200 }}
-              className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-yellow-400 to-yellow-500 bg-clip-text text-transparent mb-3 group-hover:scale-110 transition-transform duration-300"
-            >
-              24/7
-            </motion.div>
+                         <motion.div 
+               initial={{ scale: 0 }}
+               animate={{ scale: 1 }}
+               transition={{ delay: 1.9, type: "spring", stiffness: 200 }}
+               className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-yellow-400 to-yellow-500 bg-clip-text text-transparent mb-3 group-hover:scale-110 transition-transform duration-300"
+             >
+               24/7
+             </motion.div>
             <div className="text-gray-400 text-lg">Uptime</div>
           </div>
         </div>

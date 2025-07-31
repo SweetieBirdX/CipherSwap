@@ -46,27 +46,55 @@ export class OracleController {
    */
   async getMultiplePrices(req: Request, res: Response): Promise<void> {
     try {
-      const { chainId, pairs } = req.body;
+      const { prices } = req.body;
 
-      if (!chainId || !pairs || !Array.isArray(pairs)) {
+      if (!prices || !Array.isArray(prices)) {
         res.status(400).json({
           success: false,
-          error: 'Invalid request: chainId and pairs array required',
+          error: 'Invalid request: prices array required',
           timestamp: Date.now()
         });
         return;
       }
 
-      logger.info('Oracle batch price request received', { chainId, pairs });
+      logger.info('Oracle batch price request received', { prices });
 
-      const responses = await oracleService.getMultiplePrices(chainId, pairs);
+      const results = [];
+      
+      for (const priceRequest of prices) {
+        const { chainId, pair } = priceRequest;
+        
+        if (!chainId || !pair) {
+          results.push({
+            chainId,
+            pair,
+            success: false,
+            error: 'Missing chainId or pair'
+          });
+          continue;
+        }
 
-      const results = responses.map((response, index) => ({
-        pair: pairs[index],
-        success: response.success,
-        data: response.data,
-        error: response.error
-      }));
+        const response = await oracleService.getPrice(chainId, pair);
+        
+        if (response.success && response.data) {
+          results.push({
+            chainId,
+            pair,
+            price: response.data.price.toString(),
+            timestamp: response.data.timestamp,
+            decimals: response.data.decimals,
+            feedAddress: response.data.oracleAddress,
+            description: `${pair} Price Feed`
+          });
+        } else {
+          results.push({
+            chainId,
+            pair,
+            success: false,
+            error: response.error
+          });
+        }
+      }
 
       res.json({
         success: true,
