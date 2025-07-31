@@ -3604,6 +3604,14 @@ export class SwapService {
         service: 'cipherswap-api'
       });
 
+      // Check for empty transactions first
+      if (!bundleRequest.transactions || bundleRequest.transactions.length === 0) {
+        return {
+          success: false,
+          error: 'No transactions provided for simulation'
+        };
+      }
+
       if (!this.flashbotsProvider) {
         logger.error('Flashbots provider not initialized for bundle submission', {
           userAddress,

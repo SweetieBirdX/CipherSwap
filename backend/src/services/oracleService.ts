@@ -307,6 +307,13 @@ export class OracleService {
   }
 
   /**
+   * Get all supported networks (for backward compatibility)
+   */
+  getAllNetworks(): { chainId: number; name: string; feeds: string[] }[] {
+    return this.getAllSupportedNetworks();
+  }
+
+  /**
    * Get price feed address for a specific pair and chain
    */
   private getPriceFeedAddress(chainId: number, pair: string): string | null {

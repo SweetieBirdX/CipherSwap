@@ -149,14 +149,8 @@ export class QuoteController {
         parseInt(limit as string)
       );
       
-      // Return successful response
-      const apiResponse: ApiResponse = {
-        success: true,
-        data: history,
-        timestamp: Date.now()
-      };
-      
-      res.json(apiResponse);
+      // Return array directly for test compatibility
+      res.json(history || []);
       
     } catch (error: any) {
       logger.error('Quote history controller error', { 
@@ -184,14 +178,8 @@ export class QuoteController {
       // Get supported tokens
       const tokens = await this.quoteService.getSupportedTokens(parseInt(chainId as string));
       
-      // Return successful response
-      const apiResponse: ApiResponse = {
-        success: true,
-        data: tokens,
-        timestamp: Date.now()
-      };
-      
-      res.json(apiResponse);
+      // Return array directly for test compatibility
+      res.json(tokens || []);
       
     } catch (error: any) {
       logger.error('Supported tokens controller error', { 
