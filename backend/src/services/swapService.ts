@@ -3215,8 +3215,7 @@ export class SwapService {
         });
         return {
           success: false,
-          error: `Bundle simulation failed: ${simulation.error}`
-        };
+          error: `Bundle simulation failed: ${simulation.error}`        };
       }
 
       logger.info('Flashbots bundle simulation successful, submitting bundle', {
