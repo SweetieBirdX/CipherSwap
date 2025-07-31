@@ -83,12 +83,59 @@ app.use(errorHandler);
 // Start server
 const PORT = config.PORT;
 
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
   logger.info(`🚀 CipherSwap API server started`, {
     port: PORT,
     environment: config.NODE_ENV,
     timestamp: new Date().toISOString()
   });
+  
+  // ====== RESOLVER_BOT_STARTUP (yahya) ======
+  // Initialize and start resolver bot if enabled
+  if (config.ENABLE_RESOLVER_BOT) {
+    try {
+      const { ResolverBot } = await import('./services/resolverBot');
+      const { OrderbookService } = await import('./services/orderbookService');
+      const { PredicateService } = await import('./services/predicateService');
+      const { ethers } = await import('ethers');
+      
+      // Initialize services
+      const orderbookService = new OrderbookService();
+      const predicateService = new PredicateService();
+      
+      // Create provider
+      const provider = new ethers.JsonRpcProvider(config.ETHEREUM_RPC_URL);
+      
+      // Initialize resolver bot
+      const resolverBot = new ResolverBot(
+        config.INCH_LIMIT_ORDER_AUTH_KEY!,
+        config.PRIVATE_KEY,
+        provider,
+        orderbookService,
+        predicateService
+      );
+      
+      // Start resolver bot
+      await resolverBot.start();
+      
+      logger.info('🤖 Resolver bot started successfully', {
+        botAddress: resolverBot.getStatus().address,
+        timestamp: new Date().toISOString(),
+        service: 'cipherswap-resolver-bot'
+      });
+      
+      // Store bot instance for potential future use
+      (global as any).resolverBot = resolverBot;
+      
+    } catch (error: any) {
+      logger.error('Failed to start resolver bot', {
+        error: error.message,
+        timestamp: new Date().toISOString(),
+        service: 'cipherswap-resolver-bot'
+      });
+    }
+  }
+  // ====== END RESOLVER_BOT_STARTUP ======
   
   console.log(`
   ╔══════════════════════════════════════════════════════════════╗
@@ -98,6 +145,8 @@ app.listen(PORT, () => {
   ║  🌍 Environment: ${config.NODE_ENV}                         ║
   ║  📊 Health check: http://localhost:${PORT}/health           ║
   ║  📚 API docs: http://localhost:${PORT}/api                  ║
+  ║  🤖 Resolver Bot: ${config.ENABLE_RESOLVER_BOT ? 'Enabled' : 'Disabled'} ║
+  ║  📋 Limit Orders: ${config.ENABLE_LIMIT_ORDERS ? 'Enabled' : 'Disabled'} ║
   ║                                                              ║
   ║  ETHGlobal Unite DeFi Hackathon                             ║
   ╚══════════════════════════════════════════════════════════════╝

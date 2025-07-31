@@ -38,6 +38,24 @@ export const config = {
   ENABLE_MEV_PROTECTION: process.env.ENABLE_MEV_PROTECTION === 'true',
   ENABLE_FUSION: process.env.ENABLE_FUSION === 'true',
   ENABLE_L2_SUPPORT: process.env.ENABLE_L2_SUPPORT === 'true',
+  ENABLE_LIMIT_ORDERS: process.env.ENABLE_LIMIT_ORDERS !== 'false', // Default true
+  ENABLE_RESOLVER_BOT: process.env.ENABLE_RESOLVER_BOT === 'true',
+  
+  // Limit Order Configuration
+  LIMIT_ORDER_DEFAULT_EXPIRY: parseInt(process.env.LIMIT_ORDER_DEFAULT_EXPIRY || '120'), // 2 minutes
+  LIMIT_ORDER_MAX_EXPIRY: parseInt(process.env.LIMIT_ORDER_MAX_EXPIRY || '86400'), // 24 hours
+  LIMIT_ORDER_MIN_SIZE: process.env.LIMIT_ORDER_MIN_SIZE || '1000000000000000000', // 1 token
+  LIMIT_ORDER_MAX_SIZE: process.env.LIMIT_ORDER_MAX_SIZE || '1000000000000000000000000', // 1M tokens
+  
+  // Resolver Bot Configuration
+  RESOLVER_BOT_INTERVAL: parseInt(process.env.RESOLVER_BOT_INTERVAL || '10000'), // 10 seconds
+  RESOLVER_BOT_MIN_ORDER_SIZE: parseFloat(process.env.RESOLVER_BOT_MIN_ORDER_SIZE || '0.001'), // Minimum order size
+  RESOLVER_BOT_MAX_CONCURRENT_ORDERS: parseInt(process.env.RESOLVER_BOT_MAX_CONCURRENT_ORDERS || '5'),
+  RESOLVER_BOT_ENABLE_WHITELIST: process.env.RESOLVER_BOT_ENABLE_WHITELIST === 'true',
+  
+  // 1inch Limit Order SDK Configuration
+  INCH_LIMIT_ORDER_NETWORK_ID: parseInt(process.env.INCH_LIMIT_ORDER_NETWORK_ID || '1'), // Ethereum mainnet
+  INCH_LIMIT_ORDER_AUTH_KEY: process.env.INCH_LIMIT_ORDER_AUTH_KEY || process.env.INCH_API_KEY,
   
   // Flashbots Configuration
   FLASHBOTS_RELAY_URL: process.env.FLASHBOTS_RELAY_URL || 'https://relay.flashbots.net',
