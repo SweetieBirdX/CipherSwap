@@ -5,6 +5,7 @@ import { logger } from '../utils/logger';
 import { config } from '../config/env';
 import { OrderbookService } from './orderbookService';
 import { PredicateService } from './predicateService';
+import axios from 'axios';
 
 export class ResolverBot {
   private api: Api;
@@ -29,9 +30,22 @@ export class ResolverBot {
     this.predicateService = predicateService;
     this.whitelistedAddresses = [];
 
+    // Create HTTP connector for 1inch API
+    const httpConnector = {
+      get: async <T>(url: string, headers: Record<string, string>): Promise<T> => {
+        const response = await axios.get(url, { headers });
+        return response.data;
+      },
+      post: async <T>(url: string, data: unknown, headers: Record<string, string>): Promise<T> => {
+        const response = await axios.post(url, data, { headers });
+        return response.data;
+      }
+    };
+
     this.api = new Api({
       networkId: config.CHAIN_ID,
       authKey,
+      httpConnector
     });
 
     logger.info('ResolverBot initialized', {
