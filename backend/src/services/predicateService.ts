@@ -453,4 +453,99 @@ export class PredicateService {
   }
 }
 
+// ====== LIMIT_ORDER_PREDICATE_LOGIC (tolga) ======
+/**
+ * 1inch Limit Order için fiyat guard predicate'i
+ * Chainlink oracle tabanlı fiyat sapma kontrolü
+ */
+export async function buildPriceGuardPredicate(
+  currentPrice: bigint,
+  minPrice: bigint,
+  maxPrice: bigint,
+  tolerancePercent: number = 1.0
+): Promise<{ success: boolean; isValid: boolean; error?: string; deviation?: number }> {
+  try {
+    // Fiyat aralığı kontrolü
+    const isWithinRange = currentPrice >= minPrice && currentPrice <= maxPrice;
+    
+    if (!isWithinRange) {
+      const deviation = Math.abs(Number(currentPrice - minPrice) / Number(minPrice)) * 100;
+      return {
+        success: true,
+        isValid: false,
+        deviation
+      };
+    }
+    
+    // Tolerans kontrolü (opsiyonel)
+    if (tolerancePercent > 0) {
+      const expectedPrice = (minPrice + maxPrice) / 2n;
+      const deviation = Math.abs(Number(currentPrice - expectedPrice) / Number(expectedPrice)) * 100;
+      
+      if (deviation > tolerancePercent) {
+        return {
+          success: true,
+          isValid: false,
+          deviation
+        };
+      }
+    }
+    
+    return {
+      success: true,
+      isValid: true,
+      deviation: 0
+    };
+  } catch (error: any) {
+    return {
+      success: false,
+      isValid: false,
+      error: error.message
+    };
+  }
+}
+
+/**
+ * 1inch Limit Order için predicate validation
+ * Bu fonksiyon, limit order'ın predicate koşullarını kontrol eder
+ */
+export async function validateLimitOrderPredicate(
+  predicateId: string,
+  currentPrice: bigint,
+  predicateService: PredicateService
+): Promise<{ success: boolean; isValid: boolean; error?: string }> {
+  try {
+    const predicateResponse = await predicateService.getPredicateStatus(predicateId);
+    
+    if (!predicateResponse.success || !predicateResponse.data) {
+      return {
+        success: false,
+        isValid: false,
+        error: 'Predicate not found or invalid'
+      };
+    }
+    
+    const predicateData = predicateResponse.data;
+    const thresholdPrice = BigInt(Math.floor(predicateData.currentPrice * 1e8)); // Chainlink 8 decimal
+    const tolerance = predicateData.tolerance;
+    
+    // Fiyat sapma hesaplama
+    const deviation = Math.abs(Number(currentPrice - thresholdPrice) / Number(thresholdPrice)) * 100;
+    const isValid = deviation <= tolerance;
+    
+    return {
+      success: true,
+      isValid,
+      error: isValid ? undefined : `Price deviation ${deviation.toFixed(2)}% exceeds tolerance ${tolerance}%`
+    };
+  } catch (error: any) {
+    return {
+      success: false,
+      isValid: false,
+      error: error.message
+    };
+  }
+}
+// ====== END LIMIT_ORDER_PREDICATE_LOGIC ======
+
 export default PredicateService; 
