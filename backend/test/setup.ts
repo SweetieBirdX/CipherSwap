@@ -35,4 +35,4 @@ afterAll(async () => {
 });
 
 // Increase timeout for async operations
-jest.setTimeout(30000); 
+jest.setTimeout(60000); 

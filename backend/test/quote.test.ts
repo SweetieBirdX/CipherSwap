@@ -15,69 +15,70 @@ app.post('/api/quote/simulate', (req, res) => quoteController.simulateSwap(req, 
 app.get('/api/quote/history', (req, res) => quoteController.getQuoteHistory(req, res));
 app.get('/api/quote/tokens', (req, res) => quoteController.getSupportedTokens(req, res));
 
-// Basic test structure
-const testQuoteAPI = () => {
-  console.log('Testing Quote API...');
-  
-  // Test 1: Missing required fields
-  const testMissingFields = async () => {
-    const invalidRequest = {
-      fromToken: '0xA0b86a33E6441b8c4C8C0C8C0C8C0C8C0C8C0C8C',
-      // missing toToken, amount, chainId, userAddress
-    };
+describe('Quote API Tests', () => {
+  describe('POST /api/quote', () => {
+    it('should return 400 for missing required fields', async () => {
+      const invalidRequest = {
+        fromToken: '0xA0b86a33E6441b8c4C8C0C8C0C8C0C8C0C8C0C8C',
+        // missing toToken, amount, chainId, userAddress
+      };
 
-    try {
       const response = await request(app)
         .post('/api/quote')
         .send(invalidRequest);
       
-      console.log('Test 1 passed: Missing fields returns 400');
-      return response.status === 400;
-    } catch (error) {
-      console.log('Test 1 failed:', error);
-      return false;
-    }
-  };
+      expect(response.status).toBe(400);
+    });
 
-  // Test 2: Invalid token addresses
-  const testInvalidAddresses = async () => {
-    const invalidRequest = {
-      fromToken: 'invalid-address',
-      toToken: 'invalid-address',
-      amount: '1000000000000000000',
-      chainId: 1,
-      userAddress: '0x1234567890123456789012345678901234567890'
-    };
+    it('should return 400 for invalid token addresses', async () => {
+      const invalidRequest = {
+        fromToken: 'invalid-address',
+        toToken: 'invalid-address',
+        amount: '1000000000000000000',
+        chainId: 1,
+        userAddress: '0x1234567890123456789012345678901234567890'
+      };
 
-    try {
       const response = await request(app)
         .post('/api/quote')
         .send(invalidRequest);
       
-      console.log('Test 2 passed: Invalid addresses returns 400');
-      return response.status === 400;
-    } catch (error) {
-      console.log('Test 2 failed:', error);
-      return false;
-    }
-  };
-
-  // Run tests
-  return Promise.all([
-    testMissingFields(),
-    testInvalidAddresses()
-  ]);
-};
-
-// Export for manual testing
-export { testQuoteAPI };
-
-// Run tests if this file is executed directly
-if (require.main === module) {
-  testQuoteAPI().then(results => {
-    const passed = results.filter(Boolean).length;
-    const total = results.length;
-    console.log(`\nTest Results: ${passed}/${total} tests passed`);
-    process.exit(passed === total ? 0 : 1);
+      expect(response.status).toBe(400);
+    });
   });
-} 
+
+  describe('POST /api/quote/simulate', () => {
+    it('should return 400 for missing required fields', async () => {
+      const invalidRequest = {
+        fromToken: '0xA0b86a33E6441b8c4C8C0C8C0C8C0C8C0C8C0C8C',
+        // missing toToken, amount, chainId, userAddress
+      };
+
+      const response = await request(app)
+        .post('/api/quote/simulate')
+        .send(invalidRequest);
+      
+      expect(response.status).toBe(400);
+    });
+  });
+
+  describe('GET /api/quote/history', () => {
+    it('should return quote history', async () => {
+      const response = await request(app)
+        .get('/api/quote/history');
+      
+      expect(response.status).toBe(200);
+      expect(Array.isArray(response.body)).toBe(true);
+    });
+  });
+
+  describe('GET /api/quote/tokens', () => {
+    it('should return supported tokens', async () => {
+      const response = await request(app)
+        .get('/api/quote/tokens');
+      
+      expect(response.status).toBe(200);
+      expect(Array.isArray(response.body)).toBe(true);
+    });
+  });
+}); 

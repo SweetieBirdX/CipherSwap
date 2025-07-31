@@ -84,6 +84,9 @@ describe('Flashbots MEV Protection', () => {
       data: {
         toTokenAmount: '1800000000000000000', // 1.8 ETH
         estimatedGas: '210000',
+        slippage: 0.5,
+        priceImpact: 0.1,
+        estimatedGains: 800000000000000000, // 0.8 ETH
         route: [
           {
             fromToken: '0xA0b86a33E6441b8c4C8C0b4b8C0b4b8C0b4b8C0b',

@@ -235,8 +235,8 @@ describe('OrderbookService', () => {
       const ethereumOrders = await orderbookService.queryOrders({ chainId: 1 });
       const polygonOrders = await orderbookService.queryOrders({ chainId: 137 });
 
-      expect(ethereumOrders.length).toBe(2);
-      expect(polygonOrders.length).toBe(1);
+      expect(ethereumOrders.length).toBe(2); // 2 orders on Ethereum
+      expect(polygonOrders.length).toBe(1);  // 1 order on Polygon
     });
 
     it('should apply pagination', async () => {

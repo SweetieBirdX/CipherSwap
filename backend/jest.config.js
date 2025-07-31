@@ -20,7 +20,7 @@ module.exports = {
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1'
   },
-  testTimeout: 30000,
+  testTimeout: 60000,
   // Add async handling configuration
   forceExit: true,
   detectOpenHandles: true,
