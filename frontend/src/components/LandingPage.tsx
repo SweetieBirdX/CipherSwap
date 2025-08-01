@@ -6,60 +6,70 @@ export default function LandingPage() {
   return (
     <div>
       {/* Hero Section */}
-      <div style={{ textAlign: 'center', padding: '80px 20px' }}>
-        <h1 style={{ fontSize: '48px', fontWeight: 'bold', marginBottom: '24px' }}>
+      <div style={{ 
+        textAlign: 'center', 
+        padding: '80px 20px',
+        background: 'linear-gradient(135deg, #4169E1 0%, #5B7CF7 100%)',
+        color: 'white'
+      }}>
+        <h1 style={{ fontSize: '48px', fontWeight: 'bold', marginBottom: '24px', color: 'white' }}>
           Secure{' '}
-          <span style={{ color: 'black' }}>
+          <span style={{ color: '#E8F2FF' }}>
             DeFi
           </span>{' '}
           Trading
         </h1>
         
-        <p style={{ fontSize: '20px', lineHeight: '1.6', maxWidth: '800px', margin: '0 auto', color: '#666', marginBottom: '32px' }}>
-          Enterprise-grade OTC swaps with advanced MEV protection, intelligent split routing, 
-          and zero slippage execution. Built for institutional traders and DAOs.
+        <p style={{ fontSize: '20px', lineHeight: '1.6', maxWidth: '800px', margin: '0 auto', color: '#E8F2FF', marginBottom: '32px' }}>
+        Advanced DEX Swaps with advanced MEV protection, intelligent split routing, 
+          and zero slippage execution. Built for DeFi traders.
         </p>
 
         <Link to="/docs" style={{ 
           display: 'inline-block', 
           padding: '12px 24px', 
-          backgroundColor: '#2433FF', 
-          color: 'white', 
+          backgroundColor: 'white', 
+          color: '#4169E1', 
           textDecoration: 'none', 
           borderRadius: '8px',
           fontWeight: 'bold',
-          fontSize: '16px'
+          fontSize: '16px',
+          transition: 'all 0.3s ease',
+          boxShadow: '0 4px 15px rgba(65, 105, 225, 0.3)'
         }}>
           Learn More
         </Link>
       </div>
 
       {/* Features Grid */}
-      <div style={{ padding: '60px 20px', textAlign: 'center' }}>
-        <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '40px' }}>
-          <div style={{ padding: '30px', border: '1px solid #eee', borderRadius: '12px' }}>
-            <h3 style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '16px' }}>
-              🛡️ MEV Protection
+      <div style={{ padding: '60px 20px', textAlign: 'center', backgroundColor: '#6495ED' }}>
+        <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+          gap: '30px'
+        }}>
+          <div style={{ padding: '30px', borderRadius: '12px', backgroundColor: '#5390FE', boxShadow: '0 4px 15px rgba(255, 255, 255, 0.2)' }}>
+            <h3 style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '16px', color: 'white' }}>
+              🛡️ MEV Protection <br /> + Limit Order
             </h3>
-            <p style={{ lineHeight: '1.6', color: '#666' }}>
+            <p style={{ lineHeight: '1.6', color: '#E8F2FF' }}>
               Advanced protection against front-running and sandwich attacks using Flashbots and sophisticated routing algorithms.
             </p>
           </div>
 
-          <div style={{ padding: '30px', border: '1px solid #eee', borderRadius: '12px' }}>
-            <h3 style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '16px' }}>
-              ⚡ Split Routing
+          <div style={{ padding: '30px', borderRadius: '12px', backgroundColor: '#5390FE', boxShadow: '0 4px 15px rgba(255, 255, 255, 0.2)' }}>
+            <h3 style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '16px', color: 'white' }}>
+              ⚡ Split Routing + APIs
             </h3>
-            <p style={{ lineHeight: '1.6', color: '#666' }}>
-              Intelligent routing across multiple DEXs and chains for optimal execution and minimal price impact.
+            <p style={{ lineHeight: '1.6', color: '#E8F2FF' }}>
+            Smart routing via 1inch and chains for optimal execution and minimal price impact.
             </p>
           </div>
 
-          <div style={{ padding: '30px', border: '1px solid #eee', borderRadius: '12px' }}>
-            <h3 style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '16px' }}>
+          <div style={{ padding: '30px', borderRadius: '12px', backgroundColor: '#5390FE', boxShadow: '0 4px 15px rgba(255, 255, 255, 0.2)' }}>
+            <h3 style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '16px', color: 'white' }}>
               🔒 Zero Slippage
             </h3>
-            <p style={{ lineHeight: '1.6', color: '#666' }}>
+            <p style={{ lineHeight: '1.6', color: '#E8F2FF' }}>
               Smart order routing and execution ensures minimal slippage even for large institutional trades.
             </p>
           </div>
@@ -67,23 +77,27 @@ export default function LandingPage() {
       </div>
 
       {/* Stats Section */}
-      <div style={{ padding: '60px 20px' }}>
-        <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', textAlign: 'center' }}>
+      <div style={{ padding: '60px 20px', backgroundColor: '#93C5FD' }}>
+        <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex',
+          justifyContent: 'space-around',
+          flexWrap: 'wrap',
+          gap: '40px'
+        }}>
           <div>
-            <div style={{ fontSize: '36px', fontWeight: 'bold', color: 'black', marginBottom: '8px' }}>$50M+</div>
-            <div style={{ fontSize: '16px', color: '#666' }}>Total Volume</div>
+            <div style={{ fontSize: '36px', fontWeight: 'bold', color: '#4169E1', marginBottom: '8px' }}>Live on</div>
+            <div style={{ fontSize: '20px', color: '#666' }}>Ethereum Testnet</div>
           </div>
           <div>
-            <div style={{ fontSize: '36px', fontWeight: 'bold', color: 'black', marginBottom: '8px' }}>99.9%</div>
-            <div style={{ fontSize: '16px', color: '#666' }}>Success Rate</div>
+            <div style={{ fontSize: '36px', fontWeight: 'bold', color: '#4169E1', marginBottom: '8px' }}>Flashbots</div>
+            <div style={{ fontSize: '20px', color: '#666' }}>Protected</div>
           </div>
           <div>
-            <div style={{ fontSize: '36px', fontWeight: 'bold', color: 'black', marginBottom: '8px' }}>0.1%</div>
-            <div style={{ fontSize: '16px', color: '#666' }}>Avg Slippage</div>
+            <div style={{ fontSize: '36px', fontWeight: 'bold', color: '#4169E1', marginBottom: '8px' }}>1inch</div>
+            <div style={{ fontSize: '20px', color: '#666' }}>Powered</div>
           </div>
           <div>
-            <div style={{ fontSize: '36px', fontWeight: 'bold', color: 'black', marginBottom: '8px' }}>24/7</div>
-            <div style={{ fontSize: '16px', color: '#666' }}>Uptime</div>
+            <div style={{ fontSize: '36px', fontWeight: 'bold', color: '#4169E1', marginBottom: '8px' }}>Multi-Chain</div>
+            <div style={{ fontSize: '20px', color: '#666' }}>Support</div>
           </div>
         </div>
       </div>

@@ -1,7 +1,6 @@
 import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import LiveOracleTable from './LiveOracleTable'
-import Navbar from './Navbar'
 
 export default function LivePricesPage() {
   return (
@@ -47,9 +46,6 @@ export default function LivePricesPage() {
           }}
         />
       </div>
-
-      {/* Navbar */}
-      <Navbar />
 
       {/* Live Oracle Table */}
       <motion.div 
