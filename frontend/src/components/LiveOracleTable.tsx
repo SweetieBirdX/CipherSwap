@@ -26,6 +26,8 @@ export default function LiveOracleTable({ className = '' }: LiveOracleTableProps
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date())
+  const [selectedChain, setSelectedChain] = useState<string>('all')
+  const [selectedToken, setSelectedToken] = useState<string>('all')
 
   // Fiyatları güncelle
   const updatePrices = async () => {
@@ -113,7 +115,7 @@ export default function LiveOracleTable({ className = '' }: LiveOracleTableProps
 
   if (loading) {
     return (
-      <div className={`bg-white/5 backdrop-blur-sm rounded-2xl p-6 ${className}`}>
+      <div className={`bg-[#2433FF]/10 backdrop-blur-sm rounded-2xl p-6 border border-[#00C2D1]/20 ${className}`}>
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-xl font-semibold text-white">Live Oracle Prices</h3>
           <div className="flex items-center space-x-2">
@@ -134,21 +136,59 @@ export default function LiveOracleTable({ className = '' }: LiveOracleTableProps
     <motion.div 
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className={`bg-white/5 backdrop-blur-sm rounded-2xl p-6 ${className}`}
+      className={`bg-[#2433FF]/10 backdrop-blur-sm rounded-2xl p-6 border border-[#00C2D1]/20 ${className}`}
     >
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h3 className="text-xl font-semibold text-white mb-1">Live Oracle Prices</h3>
-          <p className="text-sm text-gray-400">
-            Last updated: {lastUpdate.toLocaleTimeString()}
-          </p>
-        </div>
-        <div className="flex items-center space-x-2">
-          <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-          <span className="text-sm text-gray-400">Live</span>
-        </div>
-      </div>
+             {/* Header */}
+       <div className="flex items-center justify-between mb-6">
+         <div>
+           <h3 className="text-xl font-semibold text-white mb-1">Live Oracle Prices</h3>
+           <p className="text-sm text-[#F8F9FC]/70">
+             Last updated: {lastUpdate.toLocaleTimeString()}
+           </p>
+         </div>
+         <div className="flex items-center space-x-2">
+           <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+           <span className="text-sm text-[#F8F9FC]/70">Live</span>
+         </div>
+       </div>
+
+       {/* Filters */}
+       <div className="flex flex-wrap gap-4 mb-6">
+         <div className="flex items-center space-x-2">
+           <label className="text-[#F8F9FC]/80 text-sm font-medium">Network:</label>
+           <select 
+             value={selectedChain}
+             onChange={(e) => setSelectedChain(e.target.value)}
+             className="bg-[#2433FF]/20 text-white rounded-lg px-3 py-1 text-sm border border-[#00C2D1]/30 focus:border-[#2433FF] focus:outline-none"
+           >
+             <option value="all">All Networks</option>
+             <option value="1">Ethereum</option>
+             <option value="137">Polygon</option>
+             <option value="10">Optimism</option>
+             <option value="42161">Arbitrum</option>
+             <option value="8453">Base</option>
+           </select>
+         </div>
+         
+         <div className="flex items-center space-x-2">
+           <label className="text-[#F8F9FC]/80 text-sm font-medium">Token:</label>
+           <select 
+             value={selectedToken}
+             onChange={(e) => setSelectedToken(e.target.value)}
+             className="bg-[#2433FF]/20 text-white rounded-lg px-3 py-1 text-sm border border-[#00C2D1]/30 focus:border-[#2433FF] focus:outline-none"
+           >
+             <option value="all">All Tokens</option>
+             <option value="ETH">ETH</option>
+             <option value="BTC">BTC</option>
+             <option value="USDC">USDC</option>
+             <option value="USDT">USDT</option>
+             <option value="DAI">DAI</option>
+             <option value="MATIC">MATIC</option>
+             <option value="OP">OP</option>
+             <option value="ARB">ARB</option>
+           </select>
+         </div>
+       </div>
 
       {/* Error Display */}
       {error && (
@@ -161,42 +201,61 @@ export default function LiveOracleTable({ className = '' }: LiveOracleTableProps
         </motion.div>
       )}
 
-      {/* Price Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
-        <AnimatePresence>
-          {prices.map((price, index) => {
-            const pair = POPULAR_PAIRS.find(p => 
-              p.chainId === price.chainId && p.pair === price.pair
-            )
-            
-            if (!pair) return null
+             {/* Price Grid */}
+       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+         <AnimatePresence>
+           {prices
+             .filter(price => {
+               const pair = POPULAR_PAIRS.find(p => 
+                 p.chainId === price.chainId && p.pair === price.pair
+               )
+               if (!pair) return false
+               
+               // Chain filter
+               if (selectedChain !== 'all' && price.chainId !== parseInt(selectedChain)) {
+                 return false
+               }
+               
+               // Token filter
+               if (selectedToken !== 'all' && pair.symbol !== selectedToken) {
+                 return false
+               }
+               
+               return true
+             })
+             .map((price, index) => {
+             const pair = POPULAR_PAIRS.find(p => 
+               p.chainId === price.chainId && p.pair === price.pair
+             )
+             
+             if (!pair) return null
 
-            return (
+             return (
               <motion.div
                 key={`${price.chainId}-${price.pair}`}
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.9 }}
                 transition={{ delay: index * 0.1 }}
-                className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/10 hover:border-white/20 transition-all duration-300"
+                className="bg-[#2433FF]/15 backdrop-blur-sm rounded-xl p-4 border border-[#00C2D1]/30 hover:border-[#2433FF]/50 transition-all duration-300"
               >
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center space-x-2">
-                    <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
+                    <div className="w-8 h-8 bg-gradient-to-r from-[#2433FF] to-[#00C2D1] rounded-lg flex items-center justify-center">
                       <span className="text-white text-xs font-bold">
                         {pair.symbol.charAt(0)}
                       </span>
                     </div>
                     <div>
                       <p className="text-white font-semibold">{pair.symbol}</p>
-                      <p className="text-xs text-gray-400">{getChainName(price.chainId)}</p>
+                      <p className="text-xs text-[#F8F9FC]/70">{getChainName(price.chainId)}</p>
                     </div>
                   </div>
                   <div className="text-right">
                     <p className={`text-lg font-bold ${getPriceChangeColor(price.price)}`}>
                       ${formatPrice(price.price, price.decimals)}
                     </p>
-                    <p className="text-xs text-gray-400">
+                    <p className="text-xs text-[#F8F9FC]/70">
                       {new Date(price.timestamp * 1000).toLocaleTimeString()}
                     </p>
                   </div>
@@ -206,9 +265,9 @@ export default function LiveOracleTable({ className = '' }: LiveOracleTableProps
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-1">
                     <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-                    <span className="text-xs text-gray-400">Oracle</span>
+                    <span className="text-xs text-[#F8F9FC]/70">Oracle</span>
                   </div>
-                  <span className="text-xs text-gray-400">
+                  <span className="text-xs text-[#F8F9FC]/70">
                     {price.feedAddress.slice(0, 6)}...{price.feedAddress.slice(-4)}
                   </span>
                 </div>
@@ -224,7 +283,7 @@ export default function LiveOracleTable({ className = '' }: LiveOracleTableProps
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           onClick={updatePrices}
-          className="px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg text-sm font-medium hover:from-blue-600 hover:to-purple-700 transition-all duration-300"
+          className="px-4 py-2 bg-gradient-to-r from-[#2433FF] to-[#00C2D1] text-white rounded-lg text-sm font-medium hover:from-[#1a2bff] hover:to-[#00a8b8] transition-all duration-300"
         >
           Refresh Prices
         </motion.button>
