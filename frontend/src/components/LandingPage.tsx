@@ -35,8 +35,25 @@ export default function LandingPage() {
           fontWeight: 'bold',
           fontSize: '16px',
           transition: 'all 0.3s ease',
-          boxShadow: '0 4px 15px rgba(65, 105, 225, 0.3)'
-        }}>
+          boxShadow: '0 4px 15px rgba(255, 255, 255, 0.3)',
+          cursor: 'pointer',
+          transform: 'translateY(0)'
+        }}
+        onMouseEnter={(e) => {
+          const target = e.target as HTMLElement;
+          target.style.backgroundColor = '#E8F2FF';
+          target.style.color = '#2C3E80';
+          target.style.boxShadow = '0 8px 25px rgba(255, 255, 255, 0.4), 0 4px 15px rgba(65, 105, 225, 0.4)';
+          target.style.transform = 'translateY(-3px)';
+        }}
+        onMouseLeave={(e) => {
+          const target = e.target as HTMLElement;
+          target.style.backgroundColor = 'white';
+          target.style.color = '#4169E1';
+          target.style.boxShadow = '0 4px 15px rgba(255, 255, 255, 0.3)';
+          target.style.transform = 'translateY(0)';
+        }}
+        >
           Learn More
         </Link>
       </div>
@@ -47,7 +64,29 @@ export default function LandingPage() {
           gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
           gap: '30px'
         }}>
-          <div style={{ padding: '30px', borderRadius: '12px', backgroundColor: '#5390FE', boxShadow: '0 4px 15px rgba(255, 255, 255, 0.2)' }}>
+          <div 
+            style={{ 
+              padding: '30px', 
+              borderRadius: '12px', 
+              backgroundColor: '#5390FE', 
+              boxShadow: '0 10px 30px rgba(44, 62, 128, 0.8), 0 6px 20px rgba(65, 105, 225, 0.7)',
+              transition: 'all 0.3s ease',
+              cursor: 'pointer',
+              transform: 'translateY(0)'
+            }}
+            onMouseEnter={(e) => {
+              const target = e.currentTarget as HTMLElement;
+              target.style.backgroundColor = '#4169E1';
+              target.style.boxShadow = '0 15px 40px rgba(44, 62, 128, 0.9), 0 8px 25px rgba(65, 105, 225, 0.8)';
+              target.style.transform = 'translateY(-5px)';
+            }}
+            onMouseLeave={(e) => {
+              const target = e.currentTarget as HTMLElement;
+              target.style.backgroundColor = '#5390FE';
+              target.style.boxShadow = '0 10px 30px rgba(44, 62, 128, 0.8), 0 6px 20px rgba(65, 105, 225, 0.7)';
+              target.style.transform = 'translateY(0)';
+            }}
+          >
             <h3 style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '16px', color: 'white' }}>
               🛡️ MEV Protection <br /> + Limit Order
             </h3>
@@ -56,7 +95,29 @@ export default function LandingPage() {
             </p>
           </div>
 
-          <div style={{ padding: '30px', borderRadius: '12px', backgroundColor: '#5390FE', boxShadow: '0 4px 15px rgba(255, 255, 255, 0.2)' }}>
+          <div 
+            style={{ 
+              padding: '30px', 
+              borderRadius: '12px', 
+              backgroundColor: '#5390FE', 
+              boxShadow: '0 10px 30px rgba(44, 62, 128, 0.8), 0 6px 20px rgba(65, 105, 225, 0.7)',
+              transition: 'all 0.3s ease',
+              cursor: 'pointer',
+              transform: 'translateY(0)'
+            }}
+            onMouseEnter={(e) => {
+              const target = e.currentTarget as HTMLElement;
+              target.style.backgroundColor = '#4169E1';
+              target.style.boxShadow = '0 15px 40px rgba(44, 62, 128, 0.9), 0 8px 25px rgba(65, 105, 225, 0.8)';
+              target.style.transform = 'translateY(-5px)';
+            }}
+            onMouseLeave={(e) => {
+              const target = e.currentTarget as HTMLElement;
+              target.style.backgroundColor = '#5390FE';
+              target.style.boxShadow = '0 10px 30px rgba(44, 62, 128, 0.8), 0 6px 20px rgba(65, 105, 225, 0.7)';
+              target.style.transform = 'translateY(0)';
+            }}
+          >
             <h3 style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '16px', color: 'white' }}>
               ⚡ Split Routing + APIs
             </h3>
@@ -65,7 +126,29 @@ export default function LandingPage() {
             </p>
           </div>
 
-          <div style={{ padding: '30px', borderRadius: '12px', backgroundColor: '#5390FE', boxShadow: '0 4px 15px rgba(255, 255, 255, 0.2)' }}>
+          <div 
+            style={{ 
+              padding: '30px', 
+              borderRadius: '12px', 
+              backgroundColor: '#5390FE', 
+              boxShadow: '0 10px 30px rgba(44, 62, 128, 0.8), 0 6px 20px rgba(65, 105, 225, 0.7)',
+              transition: 'all 0.3s ease',
+              cursor: 'pointer',
+              transform: 'translateY(0)'
+            }}
+            onMouseEnter={(e) => {
+              const target = e.currentTarget as HTMLElement;
+              target.style.backgroundColor = '#4169E1';
+              target.style.boxShadow = '0 15px 40px rgba(44, 62, 128, 0.9), 0 8px 25px rgba(65, 105, 225, 0.8)';
+              target.style.transform = 'translateY(-5px)';
+            }}
+            onMouseLeave={(e) => {
+              const target = e.currentTarget as HTMLElement;
+              target.style.backgroundColor = '#5390FE';
+              target.style.boxShadow = '0 10px 30px rgba(44, 62, 128, 0.8), 0 6px 20px rgba(65, 105, 225, 0.7)';
+              target.style.transform = 'translateY(0)';
+            }}
+          >
             <h3 style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '16px', color: 'white' }}>
               🔒 Zero Slippage
             </h3>
