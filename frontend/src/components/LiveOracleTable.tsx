@@ -79,14 +79,14 @@ export default function LiveOracleTable({ className = '' }: LiveOracleTableProps
 
   // Fiyat değişim rengini hesapla
   const getPriceChangeColor = (currentPrice: string, previousPrice?: string) => {
-    if (!previousPrice) return 'text-gray-400'
+    if (!previousPrice) return ''
     
     const current = parseFloat(currentPrice)
     const previous = parseFloat(previousPrice)
     
-    if (current > previous) return 'text-green-400'
-    if (current < previous) return 'text-red-400'
-    return 'text-gray-400'
+    if (current > previous) return ''
+    if (current < previous) return ''
+    return ''
   }
 
   // Chain ID'yi chain adına çevir
@@ -103,191 +103,118 @@ export default function LiveOracleTable({ className = '' }: LiveOracleTableProps
 
   // Fiyatı formatla
   const formatPrice = (price: string, decimals: number = 8) => {
-    const numPrice = parseFloat(price)
-    if (numPrice >= 1) {
-      return numPrice.toFixed(2)
-    } else if (numPrice >= 0.01) {
-      return numPrice.toFixed(4)
-    } else {
-      return numPrice.toFixed(6)
-    }
+    const numPrice = parseFloat(price) / Math.pow(10, decimals)
+    return numPrice.toFixed(2)
   }
+
+  // Filtrelenmiş fiyatları al
+  const filteredPrices = prices.filter(price => {
+    if (selectedChain !== 'all' && price.chainId !== parseInt(selectedChain)) {
+      return false
+    }
+    if (selectedToken !== 'all' && !price.pair.includes(selectedToken)) {
+      return false
+    }
+    return true
+  })
 
   if (loading) {
     return (
-      <div className={`bg-[#2433FF]/10 backdrop-blur-sm rounded-2xl p-6 border border-[#00C2D1]/20 ${className}`}>
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-xl font-semibold text-white">Live Oracle Prices</h3>
-          <div className="flex items-center space-x-2">
-            <div className="w-2 h-2 bg-yellow-400 rounded-full animate-pulse"></div>
-            <span className="text-sm text-gray-400">Loading...</span>
-          </div>
+      <div>
+        <div>
+          <div>Loading...</div>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
-          {[...Array(10)].map((_, i) => (
-            <div key={i} className="h-20 bg-white/5 rounded-xl animate-pulse"></div>
-          ))}
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div>
+        <div>
+          <div>Error: {error}</div>
         </div>
       </div>
     )
   }
 
   return (
-    <motion.div 
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      className={`bg-[#2433FF]/10 backdrop-blur-sm rounded-2xl p-6 border border-[#00C2D1]/20 ${className}`}
-    >
-             {/* Header */}
-       <div className="flex items-center justify-between mb-6">
-         <div>
-           <h3 className="text-xl font-semibold text-white mb-1">Live Oracle Prices</h3>
-           <p className="text-sm text-[#F8F9FC]/70">
-             Last updated: {lastUpdate.toLocaleTimeString()}
-           </p>
-         </div>
-         <div className="flex items-center space-x-2">
-           <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-           <span className="text-sm text-[#F8F9FC]/70">Live</span>
-         </div>
-       </div>
-
-       {/* Filters */}
-       <div className="flex flex-wrap gap-4 mb-6">
-         <div className="flex items-center space-x-2">
-           <label className="text-[#F8F9FC]/80 text-sm font-medium">Network:</label>
-           <select 
-             value={selectedChain}
-             onChange={(e) => setSelectedChain(e.target.value)}
-             className="bg-[#2433FF]/20 text-white rounded-lg px-3 py-1 text-sm border border-[#00C2D1]/30 focus:border-[#2433FF] focus:outline-none"
-           >
-             <option value="all">All Networks</option>
-             <option value="1">Ethereum</option>
-             <option value="137">Polygon</option>
-             <option value="10">Optimism</option>
-             <option value="42161">Arbitrum</option>
-             <option value="8453">Base</option>
-           </select>
-         </div>
-         
-         <div className="flex items-center space-x-2">
-           <label className="text-[#F8F9FC]/80 text-sm font-medium">Token:</label>
-           <select 
-             value={selectedToken}
-             onChange={(e) => setSelectedToken(e.target.value)}
-             className="bg-[#2433FF]/20 text-white rounded-lg px-3 py-1 text-sm border border-[#00C2D1]/30 focus:border-[#2433FF] focus:outline-none"
-           >
-             <option value="all">All Tokens</option>
-             <option value="ETH">ETH</option>
-             <option value="BTC">BTC</option>
-             <option value="USDC">USDC</option>
-             <option value="USDT">USDT</option>
-             <option value="DAI">DAI</option>
-             <option value="MATIC">MATIC</option>
-             <option value="OP">OP</option>
-             <option value="ARB">ARB</option>
-           </select>
-         </div>
-       </div>
-
-      {/* Error Display */}
-      {error && (
-        <motion.div 
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="mb-4 p-3 bg-red-500/20 border border-red-500/30 rounded-lg"
-        >
-          <p className="text-red-400 text-sm">{error}</p>
-        </motion.div>
-      )}
-
-             {/* Price Grid */}
-       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
-         <AnimatePresence>
-           {prices
-             .filter(price => {
-               const pair = POPULAR_PAIRS.find(p => 
-                 p.chainId === price.chainId && p.pair === price.pair
-               )
-               if (!pair) return false
-               
-               // Chain filter
-               if (selectedChain !== 'all' && price.chainId !== parseInt(selectedChain)) {
-                 return false
-               }
-               
-               // Token filter
-               if (selectedToken !== 'all' && pair.symbol !== selectedToken) {
-                 return false
-               }
-               
-               return true
-             })
-             .map((price, index) => {
-             const pair = POPULAR_PAIRS.find(p => 
-               p.chainId === price.chainId && p.pair === price.pair
-             )
-             
-             if (!pair) return null
-
-             return (
-              <motion.div
-                key={`${price.chainId}-${price.pair}`}
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.9 }}
-                transition={{ delay: index * 0.1 }}
-                className="bg-[#2433FF]/15 backdrop-blur-sm rounded-xl p-4 border border-[#00C2D1]/30 hover:border-[#2433FF]/50 transition-all duration-300"
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center space-x-2">
-                    <div className="w-8 h-8 bg-gradient-to-r from-[#2433FF] to-[#00C2D1] rounded-lg flex items-center justify-center">
-                      <span className="text-white text-xs font-bold">
-                        {pair.symbol.charAt(0)}
-                      </span>
-                    </div>
-                    <div>
-                      <p className="text-white font-semibold">{pair.symbol}</p>
-                      <p className="text-xs text-[#F8F9FC]/70">{getChainName(price.chainId)}</p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <p className={`text-lg font-bold ${getPriceChangeColor(price.price)}`}>
-                      ${formatPrice(price.price, price.decimals)}
-                    </p>
-                    <p className="text-xs text-[#F8F9FC]/70">
-                      {new Date(price.timestamp * 1000).toLocaleTimeString()}
-                    </p>
-                  </div>
-                </div>
-                
-                {/* Health indicator */}
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-1">
-                    <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-                    <span className="text-xs text-[#F8F9FC]/70">Oracle</span>
-                  </div>
-                  <span className="text-xs text-[#F8F9FC]/70">
-                    {price.feedAddress.slice(0, 6)}...{price.feedAddress.slice(-4)}
-                  </span>
-                </div>
-              </motion.div>
-            )
-          })}
-        </AnimatePresence>
+    <div>
+      {/* Header */}
+      <div>
+        <h2>Live Oracle Prices</h2>
+        <p>Real-time price feeds from Chainlink oracles</p>
+        <div>
+          <span>Last updated: {lastUpdate.toLocaleTimeString()}</span>
+        </div>
       </div>
 
-      {/* Refresh Button */}
-      <div className="mt-6 flex justify-center">
-        <motion.button
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          onClick={updatePrices}
-          className="px-4 py-2 bg-gradient-to-r from-[#2433FF] to-[#00C2D1] text-white rounded-lg text-sm font-medium hover:from-[#1a2bff] hover:to-[#00a8b8] transition-all duration-300"
-        >
-          Refresh Prices
-        </motion.button>
+      {/* Filters */}
+      <div>
+        <div>
+          <label>Chain:</label>
+          <select 
+            value={selectedChain} 
+            onChange={(e) => setSelectedChain(e.target.value)}
+          >
+            <option value="all">All Chains</option>
+            <option value="1">Ethereum</option>
+            <option value="137">Polygon</option>
+            <option value="10">Optimism</option>
+            <option value="42161">Arbitrum</option>
+            <option value="8453">Base</option>
+          </select>
+        </div>
+        <div>
+          <label>Token:</label>
+          <select 
+            value={selectedToken} 
+            onChange={(e) => setSelectedToken(e.target.value)}
+          >
+            <option value="all">All Tokens</option>
+            <option value="ETH">ETH</option>
+            <option value="BTC">BTC</option>
+            <option value="USDC">USDC</option>
+            <option value="USDT">USDT</option>
+            <option value="DAI">DAI</option>
+            <option value="MATIC">MATIC</option>
+            <option value="OP">OP</option>
+            <option value="ARB">ARB</option>
+          </select>
+        </div>
       </div>
-    </motion.div>
+
+      {/* Price Table */}
+      <div>
+        <table>
+          <thead>
+            <tr>
+              <th>Chain</th>
+              <th>Pair</th>
+              <th>Price</th>
+              <th>Last Update</th>
+            </tr>
+          </thead>
+          <tbody>
+            <AnimatePresence>
+              {filteredPrices.map((price, index) => (
+                <motion.tr
+                  key={`${price.chainId}-${price.pair}`}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  transition={{ duration: 0.3, delay: index * 0.05 }}
+                >
+                  <td>{getChainName(price.chainId)}</td>
+                  <td>{price.pair}</td>
+                  <td>${formatPrice(price.price, price.decimals)}</td>
+                  <td>{new Date(price.timestamp * 1000).toLocaleTimeString()}</td>
+                </motion.tr>
+              ))}
+            </AnimatePresence>
+          </tbody>
+        </table>
+      </div>
+    </div>
   )
 } 

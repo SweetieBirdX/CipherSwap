@@ -98,196 +98,119 @@ export default function SwapApp() {
     return parseFloat(amount).toFixed(6)
   }
 
-  const formatGas = (gas: string) => {
-    return (parseInt(gas) / 1e9).toFixed(2)
+  if (!isConnected) {
+    return (
+      <div>
+        <div>
+          <h2>Connect Wallet</h2>
+          <p>Please connect your wallet to start trading</p>
+          <ConnectButton />
+        </div>
+      </div>
+    )
   }
 
   return (
-         <div className="h-screen w-full p-6 relative overflow-hidden">
-      {/* Background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-[#2433FF] via-[#00C2D1] to-[#2433FF]">
-        <div className="absolute inset-0 opacity-20" style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%239C92AC' fill-opacity='0.05'%3E%3Ccircle cx='30' cy='30' r='2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
-        }}></div>
+    <div>
+      <div>
+        <h2>Swap Tokens</h2>
+        <p>Trade with MEV protection and intelligent routing</p>
       </div>
 
-      {/* Header */}
-      <header className="relative z-10 flex justify-between items-center mb-8">
-        <div className="flex items-center space-x-3">
-          <Link to="/" className="text-[#F8F9FC]/70 hover:text-white transition-colors duration-300">
-            ← Back to Home
-          </Link>
-          <div className="relative">
-            <div className="w-10 h-10 bg-gradient-to-r from-[#2433FF] to-[#00C2D1] rounded-xl shadow-lg"></div>
-            <div className="absolute inset-0 bg-gradient-to-r from-[#2433FF] to-[#00C2D1] rounded-xl blur-sm opacity-50"></div>
-          </div>
-          <span className="text-3xl font-bold text-white">
-            CipherSwap
-          </span>
-        </div>
-        
-        <ConnectButton />
-      </header>
-
-      {/* Main Swap Interface */}
-      <div className="relative z-10 max-w-md mx-auto">
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-gradient-to-br from-slate-800/50 to-slate-900/50 backdrop-blur-xl rounded-2xl p-8 border border-slate-700/50 shadow-2xl"
-        >
-          <h2 className="text-3xl font-bold text-white mb-8 text-center">Swap Tokens</h2>
-          
-          {/* From Token */}
-          <div className="mb-6">
-            <label className="block text-gray-300 text-sm mb-3 font-medium">From</label>
-            <div className="flex space-x-3">
-              <select 
-                value={fromToken}
-                onChange={(e) => setFromToken(e.target.value)}
-                className="flex-1 bg-slate-700/50 text-white rounded-xl px-4 py-3 border border-slate-600/50 focus:border-blue-500 focus:outline-none transition-all duration-300"
-              >
-                <option value="ETH">ETH</option>
-                <option value="USDC">USDC</option>
-                <option value="DAI">DAI</option>
-                <option value="WBTC">WBTC</option>
-              </select>
-              <input
-                type="number"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                placeholder="0.0"
-                className="flex-1 bg-slate-700/50 text-white rounded-xl px-4 py-3 border border-slate-600/50 focus:border-blue-500 focus:outline-none transition-all duration-300"
-              />
-            </div>
-          </div>
-
-          {/* Swap Arrow */}
-          <div className="flex justify-center my-6">
-            <motion.div 
-              whileHover={{ scale: 1.1, rotate: 180 }}
-              className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center shadow-lg cursor-pointer transition-all duration-300"
-            >
-              <span className="text-white text-xl">↓</span>
-            </motion.div>
-          </div>
-
-          {/* To Token */}
-          <div className="mb-8">
-            <label className="block text-gray-300 text-sm mb-3 font-medium">To</label>
-            <div className="flex space-x-3">
-              <select 
-                value={toToken}
-                onChange={(e) => setToToken(e.target.value)}
-                className="flex-1 bg-slate-700/50 text-white rounded-xl px-4 py-3 border border-slate-600/50 focus:border-blue-500 focus:outline-none transition-all duration-300"
-              >
-                <option value="USDC">USDC</option>
-                <option value="ETH">ETH</option>
-                <option value="DAI">DAI</option>
-                <option value="WBTC">WBTC</option>
-              </select>
-              <input
-                type="number"
-                placeholder="0.0"
-                value={quote && quote.quote?.toTokenAmount ? formatAmount(quote.quote.toTokenAmount) : ''}
-                className="flex-1 bg-slate-700/50 text-white rounded-xl px-4 py-3 border border-slate-600/50 focus:border-blue-500 focus:outline-none transition-all duration-300"
-                readOnly
-              />
-            </div>
-          </div>
-
-          {/* Quote Details */}
-          {quote && (
-            <motion.div 
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              className="mb-6 p-6 bg-gradient-to-br from-slate-700/30 to-slate-800/30 rounded-xl border border-slate-600/50"
-            >
-              <div className="space-y-3 text-sm">
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-400">Price Impact:</span>
-                  <span className="text-white font-semibold">{quote.priceImpact.toFixed(2)}%</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-400">Estimated Gas:</span>
-                  <span className="text-white font-semibold">{formatGas(quote.estimatedGas)} Gwei</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-400">Route:</span>
-                  <span className="text-white font-semibold">{quote.route.length} steps</span>
-                </div>
-              </div>
-            </motion.div>
-          )}
-
-          {/* Slippage Settings */}
-          <div className="mb-8">
-            <label className="block text-gray-300 text-sm mb-3 font-medium">Slippage Tolerance</label>
-            <div className="flex space-x-2">
-              {[0.1, 0.5, 1.0].map((value) => (
-                <button
-                  key={value}
-                  onClick={() => setSlippage(value)}
-                  className={`flex-1 py-3 rounded-xl text-sm font-medium transition-all duration-300 ${
-                    slippage === value 
-                      ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg' 
-                      : 'bg-slate-700/50 text-gray-300 hover:bg-slate-600/50 border border-slate-600/50'
-                  }`}
-                >
-                  {value}%
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Error Display */}
-          {error && (
-            <motion.div 
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="mb-6 p-4 bg-red-500/20 border border-red-500/50 rounded-xl"
-            >
-              <p className="text-red-400 text-sm">{error}</p>
-            </motion.div>
-          )}
-
-          {/* Status Display */}
-          {swapStatus && (
-            <motion.div 
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="mb-6 p-4 bg-blue-500/20 border border-blue-500/50 rounded-xl"
-            >
-              <p className="text-blue-400 text-sm">{swapStatus}</p>
-            </motion.div>
-          )}
-
-          {/* Swap Button */}
-          <button
-            onClick={handleSwap}
-            disabled={!isConnected || !amount || loading}
-            className="w-full py-4 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl font-semibold text-lg hover:from-blue-600 hover:to-purple-700 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transform hover:scale-105 disabled:transform-none"
+      <div>
+        {/* From Token */}
+        <div>
+          <label>From Token</label>
+          <select 
+            value={fromToken} 
+            onChange={(e) => setFromToken(e.target.value)}
           >
-            {loading ? (
-              <div className="flex items-center justify-center">
-                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"></div>
-                Processing...
-              </div>
-            ) : !isConnected ? (
-              'Connect Wallet First'
-            ) : !amount ? (
-              'Enter Amount'
-            ) : (
-              'Swap'
-            )}
-          </button>
-        </motion.div>
+            <option value="ETH">ETH</option>
+            <option value="USDC">USDC</option>
+            <option value="USDT">USDT</option>
+            <option value="DAI">DAI</option>
+          </select>
+        </div>
 
-        {/* Features Info */}
-        <div className="mt-8 text-center text-gray-400 text-sm">
-          <p className="bg-slate-800/50 px-4 py-2 rounded-xl border border-slate-700/50">
-            🛡️ MEV Protected • ⚡ Split Routing • 🔒 Zero Slippage
-          </p>
+        {/* To Token */}
+        <div>
+          <label>To Token</label>
+          <select 
+            value={toToken} 
+            onChange={(e) => setToToken(e.target.value)}
+          >
+            <option value="USDC">USDC</option>
+            <option value="ETH">ETH</option>
+            <option value="USDT">USDT</option>
+            <option value="DAI">DAI</option>
+          </select>
+        </div>
+
+        {/* Amount */}
+        <div>
+          <label>Amount</label>
+          <input
+            type="number"
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
+            placeholder="Enter amount"
+          />
+        </div>
+
+        {/* Slippage */}
+        <div>
+          <label>Slippage (%)</label>
+          <input
+            type="number"
+            value={slippage}
+            onChange={(e) => setSlippage(parseFloat(e.target.value))}
+            step="0.1"
+            min="0.1"
+            max="10"
+          />
+        </div>
+
+        {/* Quote Display */}
+        {quote && (
+          <div>
+            <h3>Quote</h3>
+            <div>
+              <p>You will receive: {formatAmount(quote.toAmount)} {toToken}</p>
+              <p>Price Impact: {quote.priceImpact}%</p>
+              <p>Gas Estimate: {quote.gasEstimate} ETH</p>
+            </div>
+          </div>
+        )}
+
+        {/* Error Display */}
+        {error && (
+          <div>
+            <p>Error: {error}</p>
+          </div>
+        )}
+
+        {/* Status Display */}
+        {swapStatus && (
+          <div>
+            <p>{swapStatus}</p>
+          </div>
+        )}
+
+        {/* Action Buttons */}
+        <div>
+          <button 
+            onClick={getQuote}
+            disabled={loading || !amount}
+          >
+            {loading ? 'Getting Quote...' : 'Get Quote'}
+          </button>
+
+          <button 
+            onClick={handleSwap}
+            disabled={loading || !quote}
+          >
+            {loading ? 'Swapping...' : 'Swap'}
+          </button>
         </div>
       </div>
     </div>
