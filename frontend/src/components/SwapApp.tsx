@@ -103,9 +103,9 @@ export default function SwapApp() {
   }
 
   return (
-    <div className="min-h-screen p-6 relative">
+         <div className="h-screen w-full p-6 relative overflow-hidden">
       {/* Background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
+      <div className="absolute inset-0 bg-gradient-to-br from-[#2433FF] via-[#00C2D1] to-[#2433FF]">
         <div className="absolute inset-0 opacity-20" style={{
           backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%239C92AC' fill-opacity='0.05'%3E%3Ccircle cx='30' cy='30' r='2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
         }}></div>
@@ -114,14 +114,14 @@ export default function SwapApp() {
       {/* Header */}
       <header className="relative z-10 flex justify-between items-center mb-8">
         <div className="flex items-center space-x-3">
-          <Link to="/" className="text-gray-400 hover:text-white transition-colors duration-300">
+          <Link to="/" className="text-[#F8F9FC]/70 hover:text-white transition-colors duration-300">
             ← Back to Home
           </Link>
           <div className="relative">
-            <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl shadow-lg"></div>
-            <div className="absolute inset-0 bg-gradient-to-r from-blue-400 to-purple-500 rounded-xl blur-sm opacity-50"></div>
+            <div className="w-10 h-10 bg-gradient-to-r from-[#2433FF] to-[#00C2D1] rounded-xl shadow-lg"></div>
+            <div className="absolute inset-0 bg-gradient-to-r from-[#2433FF] to-[#00C2D1] rounded-xl blur-sm opacity-50"></div>
           </div>
-          <span className="text-3xl font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
+          <span className="text-3xl font-bold text-white">
             CipherSwap
           </span>
         </div>
