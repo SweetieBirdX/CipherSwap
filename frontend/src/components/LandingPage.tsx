@@ -193,7 +193,7 @@ export default function LandingPage() {
               marginBottom: 'clamp(12px, 2vw, 16px)', 
               color: 'white' 
             }}>
-              🔒 Zero Slippage
+              🔒 Minimum Slippage
             </h3>
             <p style={{ 
               lineHeight: '1.6', 
@@ -229,7 +229,7 @@ export default function LandingPage() {
             <div style={{ 
               fontSize: 'clamp(14px, 2.5vw, 16px)', 
               color: '#666' 
-            }}>Ethereum Testnet</div>
+            }}>Ethereum Mainnet</div>
           </div>
           <div>
             <div style={{ 
