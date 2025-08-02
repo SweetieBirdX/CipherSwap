@@ -220,7 +220,7 @@ export class SimulationUtils {
         slippage: simulatedSlippage,
         estimatedGas: simulatedGasCost.toString(),
         priceImpact: simulatedPriceImpact,
-        estimatedGains: originalQuote.estimatedGains * (1 - simulatedSlippage / 100)
+        estimatedGains: (parseFloat(originalQuote.estimatedGains) * (1 - simulatedSlippage / 100)).toString()
       };
 
       // Calculate differences
@@ -549,7 +549,7 @@ export class SimulationUtils {
       }
 
       // Calculate estimated savings
-      const estimatedSavings = simulation.originalQuote.estimatedGains - simulation.simulatedQuote.estimatedGains;
+      const estimatedSavings = parseFloat(simulation.originalQuote.estimatedGains) - parseFloat(simulation.simulatedQuote.estimatedGains);
 
       // Generate recommendations
       const recommendations: string[] = [];

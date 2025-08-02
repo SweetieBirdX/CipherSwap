@@ -777,11 +777,15 @@ export class RFQService {
     
     if (params.amount) {
       const amount = parseFloat(params.amount);
-      if (amount < parseFloat(RFQ_CONSTANTS.MIN_AMOUNT)) {
-        errors.push(`Amount too small. Minimum: ${RFQ_CONSTANTS.MIN_AMOUNT}`);
+      // Convert wei constants to ETH for comparison
+      const minAmountEth = parseFloat(RFQ_CONSTANTS.MIN_AMOUNT) / Math.pow(10, 18);
+      const maxAmountEth = parseFloat(RFQ_CONSTANTS.MAX_AMOUNT) / Math.pow(10, 18);
+      
+      if (amount < minAmountEth) {
+        errors.push(`Amount too small. Minimum: ${minAmountEth} ETH`);
       }
-      if (amount > parseFloat(RFQ_CONSTANTS.MAX_AMOUNT)) {
-        errors.push(`Amount too large. Maximum: ${RFQ_CONSTANTS.MAX_AMOUNT}`);
+      if (amount > maxAmountEth) {
+        errors.push(`Amount too large. Maximum: ${maxAmountEth} ETH`);
       }
     }
     

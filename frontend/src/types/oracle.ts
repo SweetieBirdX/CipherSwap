@@ -7,6 +7,8 @@ export interface OraclePrice {
   decimals: number
   feedAddress: string
   description?: string
+  icon?: string
+  color?: string
 }
 
 export interface OracleBatchRequest {

@@ -705,11 +705,15 @@ export class OrderbookService {
     
     if (params.amount) {
       const amount = parseFloat(params.amount);
-      if (amount < parseFloat(ORDERBOOK_CONSTANTS.MIN_ORDER_SIZE)) {
-        errors.push(`Amount too small. Minimum: ${ORDERBOOK_CONSTANTS.MIN_ORDER_SIZE}`);
+      // Convert wei constants to ETH for comparison
+      const minAmountEth = parseFloat(ORDERBOOK_CONSTANTS.MIN_ORDER_SIZE) / Math.pow(10, 18);
+      const maxAmountEth = parseFloat(ORDERBOOK_CONSTANTS.MAX_ORDER_SIZE) / Math.pow(10, 18);
+      
+      if (amount < minAmountEth) {
+        errors.push(`Amount too small. Minimum: ${minAmountEth} ETH`);
       }
-      if (amount > parseFloat(ORDERBOOK_CONSTANTS.MAX_ORDER_SIZE)) {
-        errors.push(`Amount too large. Maximum: ${ORDERBOOK_CONSTANTS.MAX_ORDER_SIZE}`);
+      if (amount > maxAmountEth) {
+        errors.push(`Amount too large. Maximum: ${maxAmountEth} ETH`);
       }
     }
     

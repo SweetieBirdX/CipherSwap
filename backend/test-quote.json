@@ -1,0 +1,8 @@
+{
+  "fromToken": "ETH",
+  "toToken": "USDC", 
+  "amount": "0.1",
+  "chainId": 11155111,
+  "slippage": 0.5,
+  "userAddress": "0x1234567890123456789012345678901234567890"
+} 

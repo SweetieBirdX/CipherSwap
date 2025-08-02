@@ -228,7 +228,7 @@ export default function LandingPage() {
             <div style={{ 
               fontSize: 'clamp(14px, 2.5vw, 16px)', 
               color: '#666' 
-            }}>Ethereum Testnet</div>
+            }}>Ethereum Mainnet</div>
           </div>
           <div>
             <div style={{ 
