@@ -13,17 +13,17 @@ export const config = {
   INFURA_KEY: process.env.INFURA_KEY!,
   ALCHEMY_KEY: process.env.ALCHEMY_KEY!,
   
-  // Blockchain Configuration
-  CHAIN_ID: parseInt(process.env.CHAIN_ID || '1'),
+  // Blockchain Configuration - TESTNET
+  CHAIN_ID: parseInt(process.env.CHAIN_ID || '11155111'), // Sepolia testnet
   PRIVATE_KEY: process.env.PRIVATE_KEY!,
   
-  // RPC URLs
-  ETHEREUM_RPC_URL: process.env.ETHEREUM_RPC_URL || `https://mainnet.infura.io/v3/${process.env.INFURA_KEY}`,
-  ARBITRUM_RPC_URL: process.env.ARBITRUM_RPC_URL || `https://arb-mainnet.g.alchemy.com/v2/${process.env.ALCHEMY_KEY}`,
-  BASE_RPC_URL: process.env.BASE_RPC_URL || 'https://mainnet.base.org',
-  ZKSYNC_RPC_URL: process.env.ZKSYNC_RPC_URL || 'https://mainnet.era.zksync.io',
+  // RPC URLs - TESTNET
+  ETHEREUM_RPC_URL: process.env.ETHEREUM_RPC_URL || `https://sepolia.infura.io/v3/${process.env.INFURA_KEY}`,
+  ARBITRUM_RPC_URL: process.env.ARBITRUM_RPC_URL || `https://sepolia.g.alchemy.com/v2/${process.env.ALCHEMY_KEY}`,
+  BASE_RPC_URL: process.env.BASE_RPC_URL || 'https://sepolia.base.org',
+  ZKSYNC_RPC_URL: process.env.ZKSYNC_RPC_URL || 'https://testnet.era.zksync.io',
   
-  // Chainlink Configuration
+  // Chainlink Configuration - TESTNET
   CHAINLINK_ORACLE_ADDRESS: process.env.CHAINLINK_ORACLE_ADDRESS!,
   
   // Security
@@ -53,8 +53,8 @@ export const config = {
   RESOLVER_BOT_MAX_CONCURRENT_ORDERS: parseInt(process.env.RESOLVER_BOT_MAX_CONCURRENT_ORDERS || '5'),
   RESOLVER_BOT_ENABLE_WHITELIST: process.env.RESOLVER_BOT_ENABLE_WHITELIST === 'true',
   
-  // 1inch Limit Order SDK Configuration
-  INCH_LIMIT_ORDER_NETWORK_ID: parseInt(process.env.INCH_LIMIT_ORDER_NETWORK_ID || '1'), // Ethereum mainnet
+  // 1inch Limit Order SDK Configuration - TESTNET
+  INCH_LIMIT_ORDER_NETWORK_ID: parseInt(process.env.INCH_LIMIT_ORDER_NETWORK_ID || '11155111'), // Sepolia testnet
   INCH_LIMIT_ORDER_AUTH_KEY: process.env.INCH_LIMIT_ORDER_AUTH_KEY || process.env.INCH_API_KEY,
   
   // Real Market Data APIs
@@ -62,16 +62,16 @@ export const config = {
   DEFILLAMA_API_KEY: process.env.DEFILLAMA_API_KEY,
   THEGRAPH_API_KEY: process.env.THEGRAPH_API_KEY,
   
-  // Chainlink Oracle Addresses
-  CHAINLINK_ETH_USD_ORACLE: process.env.CHAINLINK_ETH_USD_ORACLE || '0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419',
-  CHAINLINK_BTC_USD_ORACLE: process.env.CHAINLINK_BTC_USD_ORACLE || '0xF4030086522a5bEEa4988F8cA5B36dbC97BeE88c',
+  // Chainlink Oracle Addresses - TESTNET
+  CHAINLINK_ETH_USD_ORACLE: process.env.CHAINLINK_ETH_USD_ORACLE || '0x694AA1769357215DE4FAC081bf1f309aDC325306', // Sepolia ETH/USD
+  CHAINLINK_BTC_USD_ORACLE: process.env.CHAINLINK_BTC_USD_ORACLE || '0x1b44F3514812d835EB1BDB0acB33d3fA3351Ee43', // Sepolia BTC/USD
   
-  // DEX Integration
-  UNISWAP_V3_FACTORY: process.env.UNISWAP_V3_FACTORY || '0x1F98431c8aD98523631AE4a59f267346ea31F984',
-  SUSHISWAP_FACTORY: process.env.SUSHISWAP_FACTORY || '0xC0AEe478e3658e2610c5F7A4A2E1777cE9e4f2Ac',
+  // DEX Integration - TESTNET
+  UNISWAP_V3_FACTORY: process.env.UNISWAP_V3_FACTORY || '0x0227628f3F023bb0B980b67D528571c95c6DaC1c', // Sepolia Uniswap V3
+  SUSHISWAP_FACTORY: process.env.SUSHISWAP_FACTORY || '0x0000000000000000000000000000000000000000', // Sepolia SushiSwap (yok)
   
-  // Flashbots Configuration
-  FLASHBOTS_RELAY_URL: process.env.FLASHBOTS_RELAY_URL || 'https://relay.flashbots.net',
+  // Flashbots Configuration - TESTNET
+  FLASHBOTS_RELAY_URL: process.env.FLASHBOTS_RELAY_URL || 'https://relay-sepolia.flashbots.net',
   FLASHBOTS_SIGNER_PRIVATE_KEY: process.env.FLASHBOTS_SIGNER_PRIVATE_KEY,
   FLASHBOTS_BUNDLE_TIMEOUT: parseInt(process.env.FLASHBOTS_BUNDLE_TIMEOUT || '120000'), // 2 minutes
   FLASHBOTS_MAX_RETRIES: parseInt(process.env.FLASHBOTS_MAX_RETRIES || '3'),

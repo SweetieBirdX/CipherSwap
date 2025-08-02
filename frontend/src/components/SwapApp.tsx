@@ -38,7 +38,7 @@ export default function SwapApp() {
         fromToken,
         toToken,
         amount,
-        chainId: 1, // Ethereum mainnet
+        chainId: 11155111, // Sepolia testnet
         slippage,
         userAddress: address
       }
@@ -69,7 +69,7 @@ export default function SwapApp() {
         fromToken,
         toToken,
         amount,
-        chainId: 1,
+        chainId: 11155111, // Sepolia testnet
         slippage,
         userAddress: address,
         useMEVProtection: true
@@ -100,118 +100,200 @@ export default function SwapApp() {
 
   if (!isConnected) {
     return (
-      <div>
-        <div>
-          <h2>Connect Wallet</h2>
-          <p>Please connect your wallet to start trading</p>
-          <ConnectButton />
-        </div>
+      <div style={{ 
+        maxWidth: '600px', 
+        margin: '0 auto', 
+        padding: '20px',
+        textAlign: 'center'
+      }}>
+        <h2 style={{ color: '#4169E1', marginBottom: '20px' }}>Connect Wallet</h2>
+        <p style={{ marginBottom: '20px' }}>Please connect your wallet to start trading on Sepolia testnet</p>
+        <ConnectButton />
       </div>
     )
   }
 
   return (
-    <div>
-      <div>
-        <h2>Swap Tokens</h2>
-        <p>Trade with MEV protection and intelligent routing</p>
+    <div style={{ 
+      maxWidth: '800px', 
+      margin: '0 auto', 
+      padding: '20px',
+      backgroundColor: '#f8f9fa',
+      borderRadius: '12px',
+      boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
+    }}>
+      <div style={{ textAlign: 'center', marginBottom: '30px' }}>
+        <h2 style={{ color: '#4169E1', fontSize: '28px', fontWeight: 'bold' }}>CipherSwap</h2>
+        <p style={{ color: '#666', fontSize: '16px' }}>Trade with MEV protection on Sepolia testnet</p>
       </div>
 
-      <div>
+      <div style={{ 
+        display: 'grid', 
+        gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+        gap: '20px',
+        marginBottom: '30px'
+      }}>
         {/* From Token */}
         <div>
-          <label>From Token</label>
+          <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>From Token</label>
           <select 
             value={fromToken} 
             onChange={(e) => setFromToken(e.target.value)}
+            style={{
+              width: '100%',
+              padding: '12px',
+              borderRadius: '8px',
+              border: '1px solid #ddd',
+              fontSize: '16px'
+            }}
           >
-            <option value="ETH">ETH</option>
-            <option value="USDC">USDC</option>
-            <option value="USDT">USDT</option>
-            <option value="DAI">DAI</option>
+            <option value="ETH">ETH (Sepolia)</option>
+            <option value="USDC">USDC (Test)</option>
+            <option value="USDT">USDT (Test)</option>
+            <option value="DAI">DAI (Test)</option>
           </select>
         </div>
 
         {/* To Token */}
         <div>
-          <label>To Token</label>
+          <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>To Token</label>
           <select 
             value={toToken} 
             onChange={(e) => setToToken(e.target.value)}
+            style={{
+              width: '100%',
+              padding: '12px',
+              borderRadius: '8px',
+              border: '1px solid #ddd',
+              fontSize: '16px'
+            }}
           >
-            <option value="USDC">USDC</option>
-            <option value="ETH">ETH</option>
-            <option value="USDT">USDT</option>
-            <option value="DAI">DAI</option>
+            <option value="USDC">USDC (Test)</option>
+            <option value="ETH">ETH (Sepolia)</option>
+            <option value="USDT">USDT (Test)</option>
+            <option value="DAI">DAI (Test)</option>
           </select>
         </div>
+      </div>
 
-        {/* Amount */}
-        <div>
-          <label>Amount</label>
-          <input
-            type="number"
-            value={amount}
-            onChange={(e) => setAmount(e.target.value)}
-            placeholder="Enter amount"
-          />
-        </div>
+      <div style={{ marginBottom: '20px' }}>
+        <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>Amount</label>
+        <input
+          type="number"
+          value={amount}
+          onChange={(e) => setAmount(e.target.value)}
+          placeholder="Enter amount"
+          style={{
+            width: '100%',
+            padding: '12px',
+            borderRadius: '8px',
+            border: '1px solid #ddd',
+            fontSize: '16px'
+          }}
+        />
+      </div>
 
-        {/* Slippage */}
-        <div>
-          <label>Slippage (%)</label>
-          <input
-            type="number"
-            value={slippage}
-            onChange={(e) => setSlippage(parseFloat(e.target.value))}
-            step="0.1"
-            min="0.1"
-            max="10"
-          />
-        </div>
+      <div style={{ marginBottom: '20px' }}>
+        <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>Slippage (%)</label>
+        <input
+          type="number"
+          value={slippage}
+          onChange={(e) => setSlippage(parseFloat(e.target.value))}
+          step="0.1"
+          min="0.1"
+          max="10"
+          style={{
+            width: '100%',
+            padding: '12px',
+            borderRadius: '8px',
+            border: '1px solid #ddd',
+            fontSize: '16px'
+          }}
+        />
+      </div>
 
-        {/* Quote Display */}
-        {quote && (
-          <div>
-            <h3>Quote</h3>
-            <div>
-              <p>You will receive: {formatAmount(quote.toAmount)} {toToken}</p>
-              <p>Price Impact: {quote.priceImpact}%</p>
-              <p>Gas Estimate: {quote.gasEstimate} ETH</p>
-            </div>
+      {/* Quote Display */}
+      {quote && (
+        <div style={{ 
+          padding: '20px', 
+          backgroundColor: 'white', 
+          borderRadius: '8px', 
+          border: '1px solid #ddd',
+          marginBottom: '20px'
+        }}>
+          <h3 style={{ marginBottom: '15px', color: '#4169E1' }}>Quote Details</h3>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '10px' }}>
+            <p><strong>Price Impact:</strong> {quote.priceImpact.toFixed(2)}%</p>
+            <p><strong>Slippage:</strong> {quote.slippage}%</p>
+            <p><strong>Estimated Gas:</strong> {quote.estimatedGas} ETH</p>
+            <p><strong>Estimated Gains:</strong> {quote.estimatedGains.toFixed(6)} {toToken}</p>
           </div>
-        )}
-
-        {/* Error Display */}
-        {error && (
-          <div>
-            <p>Error: {error}</p>
-          </div>
-        )}
-
-        {/* Status Display */}
-        {swapStatus && (
-          <div>
-            <p>{swapStatus}</p>
-          </div>
-        )}
-
-        {/* Action Buttons */}
-        <div>
-          <button 
-            onClick={getQuote}
-            disabled={loading || !amount}
-          >
-            {loading ? 'Getting Quote...' : 'Get Quote'}
-          </button>
-
-          <button 
-            onClick={handleSwap}
-            disabled={loading || !quote}
-          >
-            {loading ? 'Swapping...' : 'Swap'}
-          </button>
         </div>
+      )}
+
+      {/* Error Display */}
+      {error && (
+        <div style={{ 
+          padding: '12px', 
+          backgroundColor: '#f8d7da', 
+          color: '#721c24', 
+          borderRadius: '8px', 
+          marginBottom: '20px' 
+        }}>
+          Error: {error}
+        </div>
+      )}
+
+      {/* Status Display */}
+      {swapStatus && (
+        <div style={{ 
+          padding: '12px', 
+          backgroundColor: '#d1ecf1', 
+          color: '#0c5460', 
+          borderRadius: '8px', 
+          marginBottom: '20px' 
+        }}>
+          {swapStatus}
+        </div>
+      )}
+
+      {/* Action Buttons */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
+        <button 
+          onClick={getQuote}
+          disabled={loading || !amount}
+          style={{
+            padding: '12px',
+            backgroundColor: '#4169E1',
+            color: 'white',
+            border: 'none',
+            borderRadius: '8px',
+            fontSize: '16px',
+            fontWeight: 'bold',
+            cursor: loading ? 'not-allowed' : 'pointer',
+            opacity: loading ? 0.6 : 1
+          }}
+        >
+          {loading ? 'Getting Quote...' : 'Get Quote'}
+        </button>
+
+        <button 
+          onClick={handleSwap}
+          disabled={loading || !quote}
+          style={{
+            padding: '12px',
+            backgroundColor: '#28a745',
+            color: 'white',
+            border: 'none',
+            borderRadius: '8px',
+            fontSize: '16px',
+            fontWeight: 'bold',
+            cursor: loading ? 'not-allowed' : 'pointer',
+            opacity: loading ? 0.6 : 1
+          }}
+        >
+          {loading ? 'Swapping...' : 'Execute Swap'}
+        </button>
       </div>
     </div>
   )

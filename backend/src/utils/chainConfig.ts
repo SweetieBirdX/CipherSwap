@@ -1,309 +1,201 @@
-// Chain configuration for multiple networks (Ethereum, L2s, etc.)
+import { logger } from './logger';
 
 export interface ChainConfig {
   chainId: number;
   name: string;
   rpcUrl: string;
-  explorerUrl: string;
+  explorer: string;
   nativeCurrency: {
     name: string;
     symbol: string;
     decimals: number;
   };
-  gasSettings: {
-    maxFeePerGas: string;
-    maxPriorityFeePerGas: string;
-    gasLimit: number;
-  };
-  contracts: {
-    limitOrderProtocol?: string;
-    fusionProtocol?: string;
-    chainlinkOracle?: string;
-  };
-  features: {
-    supportsEIP1559: boolean;
-    supportsFusion: boolean;
-    supportsL2: boolean;
-  };
+  blockTime: number;
+  isTestnet: boolean;
 }
 
-export interface NetworkConfig {
-  [chainId: number]: ChainConfig;
-}
-
-// Mainnet configurations
-export const NETWORKS: NetworkConfig = {
-  // Ethereum Mainnet
+export const CHAIN_CONFIGS: Record<number, ChainConfig> = {
+  // Mainnet Chains
   1: {
     chainId: 1,
     name: 'Ethereum Mainnet',
-    rpcUrl: process.env.ETHEREUM_RPC_URL || `https://mainnet.infura.io/v3/${process.env.INFURA_KEY}`,
-    explorerUrl: 'https://etherscan.io',
+    rpcUrl: 'https://mainnet.infura.io/v3/',
+    explorer: 'https://etherscan.io',
     nativeCurrency: {
       name: 'Ether',
       symbol: 'ETH',
       decimals: 18
     },
-    gasSettings: {
-      maxFeePerGas: '50', // gwei
-      maxPriorityFeePerGas: '2', // gwei
-      gasLimit: 500000
-    },
-    contracts: {
-      limitOrderProtocol: '0x1111111254fb6c44bAC0beD2854e76F90643097d',
-      fusionProtocol: '0x1111111254fb6c44bAC0beD2854e76F90643097d',
-      chainlinkOracle: process.env.CHAINLINK_ORACLE_ADDRESS
-    },
-    features: {
-      supportsEIP1559: true,
-      supportsFusion: true,
-      supportsL2: false
-    }
+    blockTime: 12,
+    isTestnet: false
   },
-
-  // Arbitrum One
-  42161: {
-    chainId: 42161,
-    name: 'Arbitrum One',
-    rpcUrl: process.env.ARBITRUM_RPC_URL || `https://arb-mainnet.g.alchemy.com/v2/${process.env.ALCHEMY_KEY}`,
-    explorerUrl: 'https://arbiscan.io',
-    nativeCurrency: {
-      name: 'Ether',
-      symbol: 'ETH',
-      decimals: 18
-    },
-    gasSettings: {
-      maxFeePerGas: '0.1', // gwei (L2 gas is cheaper)
-      maxPriorityFeePerGas: '0.01', // gwei
-      gasLimit: 1000000
-    },
-    contracts: {
-      limitOrderProtocol: '0x1111111254fb6c44bAC0beD2854e76F90643097d',
-      fusionProtocol: '0x1111111254fb6c44bAC0beD2854e76F90643097d',
-      chainlinkOracle: process.env.ARBITRUM_CHAINLINK_ORACLE
-    },
-    features: {
-      supportsEIP1559: true,
-      supportsFusion: true,
-      supportsL2: true
-    }
-  },
-
-  // Base
-  8453: {
-    chainId: 8453,
-    name: 'Base',
-    rpcUrl: process.env.BASE_RPC_URL || 'https://mainnet.base.org',
-    explorerUrl: 'https://basescan.org',
-    nativeCurrency: {
-      name: 'Ether',
-      symbol: 'ETH',
-      decimals: 18
-    },
-    gasSettings: {
-      maxFeePerGas: '0.1', // gwei
-      maxPriorityFeePerGas: '0.01', // gwei
-      gasLimit: 1000000
-    },
-    contracts: {
-      limitOrderProtocol: '0x1111111254fb6c44bAC0beD2854e76F90643097d',
-      fusionProtocol: '0x1111111254fb6c44bAC0beD2854e76F90643097d',
-      chainlinkOracle: process.env.BASE_CHAINLINK_ORACLE
-    },
-    features: {
-      supportsEIP1559: true,
-      supportsFusion: true,
-      supportsL2: true
-    }
-  },
-
-  // zkSync Era
-  324: {
-    chainId: 324,
-    name: 'zkSync Era',
-    rpcUrl: process.env.ZKSYNC_RPC_URL || 'https://mainnet.era.zksync.io',
-    explorerUrl: 'https://explorer.zksync.io',
-    nativeCurrency: {
-      name: 'Ether',
-      symbol: 'ETH',
-      decimals: 18
-    },
-    gasSettings: {
-      maxFeePerGas: '0.05', // gwei
-      maxPriorityFeePerGas: '0.005', // gwei
-      gasLimit: 2000000
-    },
-    contracts: {
-      limitOrderProtocol: '0x1111111254fb6c44bAC0beD2854e76F90643097d',
-      fusionProtocol: '0x1111111254fb6c44bAC0beD2854e76F90643097d',
-      chainlinkOracle: process.env.ZKSYNC_CHAINLINK_ORACLE
-    },
-    features: {
-      supportsEIP1559: true,
-      supportsFusion: false, // zkSync doesn't support Fusion yet
-      supportsL2: true
-    }
-  },
-
-  // Polygon
   137: {
     chainId: 137,
-    name: 'Polygon',
-    rpcUrl: process.env.POLYGON_RPC_URL || `https://polygon-rpc.com`,
-    explorerUrl: 'https://polygonscan.com',
+    name: 'Polygon Mainnet',
+    rpcUrl: 'https://polygon-rpc.com',
+    explorer: 'https://polygonscan.com',
     nativeCurrency: {
       name: 'MATIC',
       symbol: 'MATIC',
       decimals: 18
     },
-    gasSettings: {
-      maxFeePerGas: '100', // gwei
-      maxPriorityFeePerGas: '30', // gwei
-      gasLimit: 500000
-    },
-    contracts: {
-      limitOrderProtocol: '0x1111111254fb6c44bAC0beD2854e76F90643097d',
-      fusionProtocol: '0x1111111254fb6c44bAC0beD2854e76F90643097d',
-      chainlinkOracle: process.env.POLYGON_CHAINLINK_ORACLE
-    },
-    features: {
-      supportsEIP1559: true,
-      supportsFusion: true,
-      supportsL2: true
-    }
-  }
-};
-
-// Testnet configurations
-export const TESTNETS: NetworkConfig = {
-  // Goerli Testnet
-  5: {
-    chainId: 5,
-    name: 'Goerli Testnet',
-    rpcUrl: process.env.GOERLI_RPC_URL || `https://goerli.infura.io/v3/${process.env.INFURA_KEY}`,
-    explorerUrl: 'https://goerli.etherscan.io',
+    blockTime: 2,
+    isTestnet: false
+  },
+  42161: {
+    chainId: 42161,
+    name: 'Arbitrum One',
+    rpcUrl: 'https://arb1.arbitrum.io/rpc',
+    explorer: 'https://arbiscan.io',
     nativeCurrency: {
-      name: 'Goerli Ether',
+      name: 'Ether',
       symbol: 'ETH',
       decimals: 18
     },
-    gasSettings: {
-      maxFeePerGas: '20', // gwei
-      maxPriorityFeePerGas: '1', // gwei
-      gasLimit: 500000
-    },
-    contracts: {
-      limitOrderProtocol: '0x1111111254fb6c44bAC0beD2854e76F90643097d',
-      fusionProtocol: '0x1111111254fb6c44bAC0beD2854e76F90643097d',
-      chainlinkOracle: process.env.GOERLI_CHAINLINK_ORACLE
-    },
-    features: {
-      supportsEIP1559: true,
-      supportsFusion: true,
-      supportsL2: false
-    }
+    blockTime: 1,
+    isTestnet: false
   },
-
-  // Sepolia Testnet
+  8453: {
+    chainId: 8453,
+    name: 'Base',
+    rpcUrl: 'https://mainnet.base.org',
+    explorer: 'https://basescan.org',
+    nativeCurrency: {
+      name: 'Ether',
+      symbol: 'ETH',
+      decimals: 18
+    },
+    blockTime: 2,
+    isTestnet: false
+  },
+  324: {
+    chainId: 324,
+    name: 'zkSync Era',
+    rpcUrl: 'https://mainnet.era.zksync.io',
+    explorer: 'https://explorer.zksync.io',
+    nativeCurrency: {
+      name: 'Ether',
+      symbol: 'ETH',
+      decimals: 18
+    },
+    blockTime: 1,
+    isTestnet: false
+  },
+  
+  // Testnet Chains
   11155111: {
     chainId: 11155111,
     name: 'Sepolia Testnet',
-    rpcUrl: process.env.SEPOLIA_RPC_URL || `https://sepolia.infura.io/v3/${process.env.INFURA_KEY}`,
-    explorerUrl: 'https://sepolia.etherscan.io',
+    rpcUrl: 'https://sepolia.infura.io/v3/',
+    explorer: 'https://sepolia.etherscan.io',
     nativeCurrency: {
       name: 'Sepolia Ether',
       symbol: 'ETH',
       decimals: 18
     },
-    gasSettings: {
-      maxFeePerGas: '20', // gwei
-      maxPriorityFeePerGas: '1', // gwei
-      gasLimit: 500000
+    blockTime: 12,
+    isTestnet: true
+  },
+  5: {
+    chainId: 5,
+    name: 'Goerli Testnet',
+    rpcUrl: 'https://goerli.infura.io/v3/',
+    explorer: 'https://goerli.etherscan.io',
+    nativeCurrency: {
+      name: 'Goerli Ether',
+      symbol: 'ETH',
+      decimals: 18
     },
-    contracts: {
-      limitOrderProtocol: '0x1111111254fb6c44bAC0beD2854e76F90643097d',
-      fusionProtocol: '0x1111111254fb6c44bAC0beD2854e76F90643097d',
-      chainlinkOracle: process.env.SEPOLIA_CHAINLINK_ORACLE
+    blockTime: 12,
+    isTestnet: true
+  },
+  80001: {
+    chainId: 80001,
+    name: 'Mumbai Testnet',
+    rpcUrl: 'https://rpc-mumbai.maticvigil.com',
+    explorer: 'https://mumbai.polygonscan.com',
+    nativeCurrency: {
+      name: 'MATIC',
+      symbol: 'MATIC',
+      decimals: 18
     },
-    features: {
-      supportsEIP1559: true,
-      supportsFusion: true,
-      supportsL2: false
-    }
+    blockTime: 2,
+    isTestnet: true
+  },
+  421613: {
+    chainId: 421613,
+    name: 'Arbitrum Goerli',
+    rpcUrl: 'https://goerli-rollup.arbitrum.io/rpc',
+    explorer: 'https://goerli.arbiscan.io',
+    nativeCurrency: {
+      name: 'Ether',
+      symbol: 'ETH',
+      decimals: 18
+    },
+    blockTime: 1,
+    isTestnet: true
+  },
+  84531: {
+    chainId: 84531,
+    name: 'Base Goerli',
+    rpcUrl: 'https://goerli.base.org',
+    explorer: 'https://goerli.basescan.org',
+    nativeCurrency: {
+      name: 'Ether',
+      symbol: 'ETH',
+      decimals: 18
+    },
+    blockTime: 2,
+    isTestnet: true
   }
 };
 
-// Utility functions
 export class ChainConfigUtils {
   /**
    * Get chain configuration by chain ID
    */
   static getChainConfig(chainId: number): ChainConfig | null {
-    return NETWORKS[chainId] || TESTNETS[chainId] || null;
+    return CHAIN_CONFIGS[chainId] || null;
   }
 
   /**
-   * Get all supported networks
+   * Get all supported chain IDs
    */
-  static getAllNetworks(): ChainConfig[] {
-    return [...Object.values(NETWORKS), ...Object.values(TESTNETS)];
+  static getAllChainIds(): number[] {
+    return Object.keys(CHAIN_CONFIGS).map(Number);
   }
 
   /**
-   * Get only mainnet networks
+   * Get all mainnet chain IDs
    */
-  static getMainnetNetworks(): ChainConfig[] {
-    return Object.values(NETWORKS);
+  static getMainnetChainIds(): number[] {
+    return Object.values(CHAIN_CONFIGS)
+      .filter(config => !config.isTestnet)
+      .map(config => config.chainId);
   }
 
   /**
-   * Get only testnet networks
+   * Get all testnet chain IDs
    */
-  static getTestnetNetworks(): ChainConfig[] {
-    return Object.values(TESTNETS);
+  static getTestnetChainIds(): number[] {
+    return Object.values(CHAIN_CONFIGS)
+      .filter(config => config.isTestnet)
+      .map(config => config.chainId);
   }
 
   /**
-   * Check if network supports Fusion
-   */
-  static supportsFusion(chainId: number): boolean {
-    const config = this.getChainConfig(chainId);
-    return config?.features.supportsFusion || false;
-  }
-
-  /**
-   * Check if network is L2
-   */
-  static isL2(chainId: number): boolean {
-    const config = this.getChainConfig(chainId);
-    return config?.features.supportsL2 || false;
-  }
-
-  /**
-   * Get gas settings for a chain
-   */
-  static getGasSettings(chainId: number) {
-    const config = this.getChainConfig(chainId);
-    return config?.gasSettings || {
-      maxFeePerGas: '50',
-      maxPriorityFeePerGas: '2',
-      gasLimit: 500000
-    };
-  }
-
-  /**
-   * Get contract addresses for a chain
-   */
-  static getContractAddresses(chainId: number) {
-    const config = this.getChainConfig(chainId);
-    return config?.contracts || {};
-  }
-
-  /**
-   * Validate chain ID
+   * Check if chain ID is valid
    */
   static isValidChainId(chainId: number): boolean {
-    return this.getChainConfig(chainId) !== null;
+    return chainId in CHAIN_CONFIGS;
+  }
+
+  /**
+   * Check if chain is testnet
+   */
+  static isTestnet(chainId: number): boolean {
+    const config = this.getChainConfig(chainId);
+    return config?.isTestnet || false;
   }
 
   /**
@@ -315,13 +207,94 @@ export class ChainConfigUtils {
   }
 
   /**
-   * Get RPC URL for a chain
+   * Get RPC URL by chain ID
    */
-  static getRpcUrl(chainId: number): string {
+  static getRpcUrl(chainId: number): string | null {
     const config = this.getChainConfig(chainId);
-    return config?.rpcUrl || '';
+    return config?.rpcUrl || null;
   }
-}
 
-// Default export
-export default ChainConfigUtils; 
+  /**
+   * Get explorer URL by chain ID
+   */
+  static getExplorerUrl(chainId: number): string | null {
+    const config = this.getChainConfig(chainId);
+    return config?.explorer || null;
+  }
+
+  /**
+   * Get native currency by chain ID
+   */
+  static getNativeCurrency(chainId: number) {
+    const config = this.getChainConfig(chainId);
+    return config?.nativeCurrency || null;
+  }
+
+  /**
+   * Get all networks
+   */
+  static getAllNetworks(): ChainConfig[] {
+    return Object.values(CHAIN_CONFIGS);
+  }
+
+  /**
+   * Get mainnet networks
+   */
+  static getMainnetNetworks(): ChainConfig[] {
+    return Object.values(CHAIN_CONFIGS).filter(config => !config.isTestnet);
+  }
+
+  /**
+   * Get testnet networks
+   */
+  static getTestnetNetworks(): ChainConfig[] {
+    return Object.values(CHAIN_CONFIGS).filter(config => config.isTestnet);
+  }
+
+  /**
+   * Validate chain configuration
+   */
+  static validateChainConfig(chainId: number): { isValid: boolean; errors: string[] } {
+    const errors: string[] = [];
+    
+    if (!this.isValidChainId(chainId)) {
+      errors.push(`Invalid chain ID: ${chainId}`);
+    }
+    
+    const config = this.getChainConfig(chainId);
+    if (config) {
+      if (!config.rpcUrl) {
+        errors.push('Missing RPC URL');
+      }
+      if (!config.explorer) {
+        errors.push('Missing explorer URL');
+      }
+      if (!config.nativeCurrency) {
+        errors.push('Missing native currency configuration');
+      }
+    }
+    
+    return {
+      isValid: errors.length === 0,
+      errors
+    };
+  }
+
+  /**
+   * Log chain configuration for debugging
+   */
+  static logChainConfig(chainId: number): void {
+    const config = this.getChainConfig(chainId);
+    if (config) {
+      logger.info('Chain configuration', {
+        chainId,
+        name: config.name,
+        isTestnet: config.isTestnet,
+        nativeCurrency: config.nativeCurrency,
+        blockTime: config.blockTime
+      });
+    } else {
+      logger.warn('Unknown chain ID', { chainId });
+    }
+  }
+} 

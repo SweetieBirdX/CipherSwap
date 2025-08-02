@@ -1,4 +1,3 @@
-import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import Footer from './Footer'
 
@@ -229,7 +228,7 @@ export default function LandingPage() {
             <div style={{ 
               fontSize: 'clamp(14px, 2.5vw, 16px)', 
               color: '#666' 
-            }}>Ethereum Mainnet</div>
+            }}>Ethereum Testnet</div>
           </div>
           <div>
             <div style={{ 
