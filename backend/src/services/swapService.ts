@@ -146,12 +146,15 @@ export class SwapService {
       }
 
       // Regular swap creation
+      // Convert ETH amount to wei for 1inch API
+      const amountInWei = (parseFloat(params.amount) * Math.pow(10, 18)).toString();
+      
       const response = await axios.post(
-        `${this.baseUrl}/swap/v6.0/${params.chainId}`,
+        `${this.baseUrl}/swap/v5.2/${params.chainId}`,
         {
           src: params.fromToken,
           dst: params.toToken,
-          amount: params.amount,
+          amount: amountInWei, // Use converted wei amount
           from: params.userAddress,
           slippage: params.slippage || 0.5,
           deadline: params.deadline || Math.floor(Date.now() / 1000) + 1200,
@@ -216,12 +219,15 @@ export class SwapService {
       });
 
       // Create the swap transaction first
+      // Convert ETH amount to wei for 1inch API
+      const amountInWei = (parseFloat(params.amount) * Math.pow(10, 18)).toString();
+      
       const swapResponse = await axios.post(
-        `${this.baseUrl}/swap/v6.0/${params.chainId}`,
+        `${this.baseUrl}/swap/v5.2/${params.chainId}`,
         {
           src: params.fromToken,
           dst: params.toToken,
-          amount: params.amount,
+          amount: amountInWei, // Use converted wei amount
           from: params.userAddress,
           slippage: params.slippage || 0.5,
           deadline: params.deadline || Math.floor(Date.now() / 1000) + 1200,
@@ -386,12 +392,15 @@ export class SwapService {
         gasPrice: config.FLASHBOTS_FALLBACK_GAS_PRICE
       };
 
+      // Convert ETH amount to wei for 1inch API
+      const amountInWei = (parseFloat(params.amount) * Math.pow(10, 18)).toString();
+      
       const response = await axios.post(
         `${this.baseUrl}/swap/v6.0/${params.chainId}`,
         {
           src: params.fromToken,
           dst: params.toToken,
-          amount: params.amount,
+          amount: amountInWei, // Use converted wei amount
           from: params.userAddress,
           slippage: fallbackParams.slippage,
           deadline: params.deadline || Math.floor(Date.now() / 1000) + 1200,
@@ -457,10 +466,13 @@ export class SwapService {
       }
       
       // Call 1inch Fusion+ API
+      // Convert ETH amount to wei for 1inch API
+      const amountInWei = (parseFloat(params.amount) * Math.pow(10, 18)).toString();
+      
       const response: AxiosResponse = await axios.post(`${this.baseUrl}/fusion/v1.0/quote`, {
         src: params.fromToken,
         dst: params.toToken,
-        amount: params.amount,
+        amount: amountInWei, // Use converted wei amount
         from: params.userAddress,
         slippage: params.slippage || SWAP_CONSTANTS.DEFAULT_SLIPPAGE,
         chain: params.chainId,
@@ -2348,35 +2360,19 @@ export class SwapService {
    */
   private async getQuote(params: SwapRequest): Promise<any> {
     try {
-      // Mock implementation for test environment
-      if (process.env.NODE_ENV === 'test') {
-        return {
-          success: true,
-          data: {
-            toTokenAmount: '1800000000000000000', // 1.8 ETH
-            estimatedGas: '210000',
-            route: [
-              {
-                fromToken: params.fromToken,
-                toToken: params.toToken,
-                fromTokenAmount: params.amount,
-                toTokenAmount: '1800000000000000000',
-                estimatedGas: '210000',
-                protocol: 'Uniswap V3',
-                pool: '0x1234567890abcdef1234567890abcdef12345678'
-              }
-            ]
-          }
-        };
-      }
+      // Convert ETH amount to wei for 1inch API
+      const amountInWei = (parseFloat(params.amount) * Math.pow(10, 18)).toString();
 
-      const response: AxiosResponse = await axios.get(`${this.baseUrl}/swap/v5.2/quote`, {
+      const response: AxiosResponse = await axios.get(`${this.baseUrl}/swap/v5.2/${params.chainId}/quote`, {
         params: {
           src: params.fromToken,
           dst: params.toToken,
-          amount: params.amount,
-          chain: params.chainId,
-          apiKey: this.apiKey
+          amount: amountInWei, // Use converted wei amount
+          from: params.userAddress
+        },
+        headers: {
+          'Authorization': `Bearer ${this.apiKey}`,
+          'Accept': 'application/json'
         },
         timeout: 10000
       });
@@ -2420,12 +2416,16 @@ export class SwapService {
     
     // Amount validation
     if (params.amount) {
-      const amount = parseFloat(params.amount);
-      if (amount < parseFloat(SWAP_CONSTANTS.MIN_AMOUNT)) {
-        errors.push(`Amount too small. Minimum: ${SWAP_CONSTANTS.MIN_AMOUNT}`);
+      const amountInEth = parseFloat(params.amount);
+      // Compare ETH amounts directly (frontend sends ETH)
+      const minAmountEth = parseFloat(SWAP_CONSTANTS.MIN_AMOUNT) / Math.pow(10, 18);
+      const maxAmountEth = parseFloat(SWAP_CONSTANTS.MAX_AMOUNT) / Math.pow(10, 18);
+      
+      if (amountInEth < minAmountEth) {
+        errors.push(`Amount too small. Minimum: ${minAmountEth} ETH`);
       }
-      if (amount > parseFloat(SWAP_CONSTANTS.MAX_AMOUNT)) {
-        errors.push(`Amount too large. Maximum: ${SWAP_CONSTANTS.MAX_AMOUNT}`);
+      if (amountInEth > maxAmountEth) {
+        errors.push(`Amount too large. Maximum: ${maxAmountEth} ETH`);
       }
     }
     
@@ -2672,12 +2672,18 @@ export class SwapService {
     
     // Amount validation
     if (params.amount) {
-      const amount = parseFloat(params.amount);
-      if (amount < parseFloat(SWAP_CONSTANTS.MIN_AMOUNT)) {
-        errors.push(`Amount too small. Minimum: ${SWAP_CONSTANTS.MIN_AMOUNT}`);
+      const amountInWei = parseFloat(params.amount);
+      // Compare wei amounts directly (frontend sends wei)
+      const minAmountWei = parseFloat(SWAP_CONSTANTS.MIN_AMOUNT);
+      const maxAmountWei = parseFloat(SWAP_CONSTANTS.MAX_AMOUNT);
+      
+      if (amountInWei < minAmountWei) {
+        const minAmountEth = minAmountWei / Math.pow(10, 18);
+        errors.push(`Amount too small. Minimum: ${minAmountEth} ETH`);
       }
-      if (amount > parseFloat(SWAP_CONSTANTS.MAX_AMOUNT)) {
-        errors.push(`Amount too large. Maximum: ${SWAP_CONSTANTS.MAX_AMOUNT}`);
+      if (amountInWei > maxAmountWei) {
+        const maxAmountEth = maxAmountWei / Math.pow(10, 18);
+        errors.push(`Amount too large. Maximum: ${maxAmountEth} ETH`);
       }
     }
     

@@ -81,4 +81,17 @@ export class SwapService {
       }
     }
   }
+
+  // Execute swap with optimization (split routing, etc.)
+  static async executeSwapWithOptimization(request: SwapRequest): Promise<SwapResponse> {
+    try {
+      const response = await api.post('/swap/optimize', request)
+      return response.data
+    } catch (error: any) {
+      return {
+        success: false,
+        error: error.response?.data?.error || 'Failed to execute optimized swap'
+      }
+    }
+  }
 } 

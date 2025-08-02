@@ -429,7 +429,7 @@ export enum SwapErrorCodes {
 // Constants
 export const SWAP_CONSTANTS = {
   MAX_SLIPPAGE: 50, // 50%
-  MIN_AMOUNT: '1000000000000000', // 0.001 ETH in wei
+  MIN_AMOUNT: '100000000000000', // 0.0001 ETH in wei
   MAX_AMOUNT: '1000000000000000000000000', // 1M ETH in wei
   DEFAULT_SLIPPAGE: 0.5, // 0.5%
   DEFAULT_DEADLINE: 1800, // 30 minutes

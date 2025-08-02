@@ -358,16 +358,17 @@ export class SwapController {
       
       logger.info('Cancel swap request received', { swapId: id, userAddress });
       
+      // Validate required parameters
       if (!id || !userAddress) {
         res.status(400).json({
           success: false,
-          error: 'Missing required parameters: swap ID and userAddress',
+          error: 'Missing required parameters: id, userAddress',
           timestamp: Date.now()
         });
         return;
       }
       
-      // Cancel swap
+      // Cancel swap transaction
       const cancelResponse = await this.swapService.cancelSwap(id, userAddress);
       
       if (!cancelResponse.success) {
@@ -380,7 +381,7 @@ export class SwapController {
       }
       
       // Return successful response
-      const apiResponse: ApiResponse = {
+      const apiResponse: ApiResponse<SwapData> = {
         success: true,
         data: cancelResponse.data,
         timestamp: Date.now()
@@ -390,6 +391,88 @@ export class SwapController {
       
     } catch (error: any) {
       logger.error('Cancel swap controller error', { 
+        error: error.message, 
+        stack: error.stack 
+      });
+      
+      res.status(500).json({
+        success: false,
+        error: 'Internal server error',
+        timestamp: Date.now()
+      });
+    }
+  }
+
+  /**
+   * POST /api/swap/optimize - Execute swap with optimization (split routing, etc.)
+   */
+  async executeSwapWithOptimization(req: Request, res: Response): Promise<void> {
+    try {
+      const { 
+        fromToken, 
+        toToken, 
+        amount, 
+        chainId, 
+        slippage, 
+        userAddress,
+        deadline,
+        useMEVProtection 
+      } = req.body;
+      
+      logger.info('Optimized swap request received', { 
+        fromToken, 
+        toToken, 
+        amount, 
+        chainId,
+        userAddress,
+        useMEVProtection 
+      });
+      
+      // Validate required parameters
+      if (!fromToken || !toToken || !amount || !chainId || !userAddress) {
+        res.status(400).json({
+          success: false,
+          error: 'Missing required parameters: fromToken, toToken, amount, chainId, userAddress',
+          timestamp: Date.now()
+        });
+        return;
+      }
+      
+      // Create swap request
+      const swapRequest: SwapRequest = {
+        fromToken,
+        toToken,
+        amount,
+        chainId: parseInt(chainId),
+        slippage: slippage ? parseFloat(slippage) : undefined,
+        userAddress,
+        deadline: deadline ? parseInt(deadline) : undefined,
+        useMEVProtection: useMEVProtection || false
+      };
+      
+      // Execute optimized swap
+      const swapResponse = await this.swapService.executeSwapWithOptimization(swapRequest);
+      
+      if (!swapResponse.success) {
+        res.status(400).json({
+          success: false,
+          error: swapResponse.error,
+          timestamp: Date.now()
+        });
+        return;
+      }
+      
+      // Return successful response
+      const apiResponse: ApiResponse<SwapData> = {
+        success: true,
+        data: swapResponse.data,
+        timestamp: Date.now()
+      };
+      
+      res.json(apiResponse);
+      
+    } catch (error: any) {
+      logger.error('Optimized swap controller error', { 
         error: error.message, 
         stack: error.stack 
       });
