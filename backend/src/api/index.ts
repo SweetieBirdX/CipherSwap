@@ -189,7 +189,7 @@ apiRouter.use('/orderbook', orderbookRoutes);
 apiRouter.use('/rfq', rfqRoutes);
 apiRouter.use('/limit-order', limitOrderRoutes);
 apiRouter.use('/real-time-swap', realTimeSwapRoutes);
-apiRouter.use('/market-data', realMarketDataRoutes);
+apiRouter.use('/real-market-data', realMarketDataRoutes);
 apiRouter.use('/onchain-execution', realOnchainExecutionRoutes);
 
 // API Stats endpoint

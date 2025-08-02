@@ -2,6 +2,7 @@ import { ethers } from 'ethers';
 import axios from 'axios';
 import { logger } from '../utils/logger';
 import { config } from '../config/env';
+import { OneInchSpotPriceService, OneInchSpotPriceData } from './oneInchSpotPriceService';
 
 export interface MarketData {
   price: number;
@@ -34,79 +35,27 @@ export interface LiquidityData {
 
 export class RealMarketDataService {
   private provider: ethers.JsonRpcProvider;
-  private chainlinkOracle: ethers.Contract;
-  private coingeckoBaseUrl = 'https://api.coingecko.com/api/v3';
-  private defillamaBaseUrl = 'https://api.llama.fi';
-  private dexScreenerBaseUrl = 'https://api.dexscreener.com/latest';
+  private oneInchSpotPriceService: OneInchSpotPriceService;
 
   constructor() {
     this.provider = new ethers.JsonRpcProvider(config.ETHEREUM_RPC_URL);
-    
-    // Chainlink ETH/USD Oracle
-    this.chainlinkOracle = new ethers.Contract(
-      '0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419', // ETH/USD Oracle
-      [
-        'function latestRoundData() view returns (uint80, int256, uint256, uint256, uint80)',
-        'function decimals() view returns (uint8)',
-        'function description() view returns (string)'
-      ],
-      this.provider
-    );
+    this.oneInchSpotPriceService = new OneInchSpotPriceService();
   }
 
   /**
-   * Get real-time price from multiple sources
+   * Get real-time price using only 1inch Spot Price API
    */
   async getRealTimePrice(tokenAddress: string, tokenSymbol?: string): Promise<PriceData> {
     try {
       logger.info('Getting real-time price', { tokenAddress, tokenSymbol });
 
-      // Run all price sources in parallel with shorter timeouts
-      const [chainlinkResult, inchResult, coingeckoResult] = await Promise.allSettled([
-        // 1. Chainlink Oracle (if available)
-        this.getChainlinkPrice().catch(() => null),
-        
-        // 2. 1inch API (shorter timeout)
-        this.get1inchPrice(tokenAddress).catch(() => null),
-        
-        // 3. CoinGecko API (shorter timeout)
-        tokenSymbol ? this.getCoinGeckoPrice(tokenSymbol).catch(() => null) : Promise.resolve(null)
-      ]);
-
-      // Extract prices from results
-      const chainlinkPrice = chainlinkResult.status === 'fulfilled' ? chainlinkResult.value : null;
-      const inchPrice = inchResult.status === 'fulfilled' ? inchResult.value : null;
-      const coingeckoPrice = coingeckoResult.status === 'fulfilled' ? coingeckoResult.value : null;
-
-      // Log successful prices
-      if (chainlinkPrice) logger.info('Chainlink price received', { price: chainlinkPrice });
-      if (inchPrice) logger.info('1inch price received', { price: inchPrice });
-      if (coingeckoPrice) logger.info('CoinGecko price received', { price: coingeckoPrice });
-
-      // 4. Price validation and selection
-      const prices = [chainlinkPrice, inchPrice, coingeckoPrice].filter(p => p !== null);
+      // Use only 1inch Spot Price API
+      const oneInchData = await this.oneInchSpotPriceService.getSpotPriceWithFallback(tokenAddress);
       
-      if (prices.length === 0) {
-        throw new Error('No price sources available');
-      }
-
-      // Use median price for accuracy
-      const medianPrice = this.calculateMedian(prices as number[]);
-      
-      // Validate price consistency
-      const priceVariance = this.calculatePriceVariance(prices as number[]);
-      if (priceVariance > 0.1) { // 10% variance threshold
-        logger.warn('High price variance detected', { 
-          prices, 
-          variance: priceVariance,
-          median: medianPrice 
-        });
-      }
-
       return {
-        price: medianPrice,
+        price: oneInchData.price,
         timestamp: Date.now(),
-        source: 'multi-source-validated'
+        source: oneInchData.source
       };
 
     } catch (error: any) {
@@ -126,7 +75,7 @@ export class RealMarketDataService {
       const response = await axios.get('https://api.1inch.dev/swap/v5.2/quote', {
         params: {
           src: tokenAddress,
-          dst: '0xA0b86a33E6441b8c4C8C0b4b8C0b4b8C0b4b8C0b', // USDC
+          dst: '0xA0b86991c6218b36c1d19d4a2e9eb0ce3606eb48', // Correct USDC address
           amount: '1000000000000000000', // 1 token
           chain: 1,
           from: '0x0000000000000000000000000000000000000000'
@@ -148,37 +97,9 @@ export class RealMarketDataService {
     }
   }
 
-  /**
-   * Get price from CoinGecko API
-   */
-  private async getCoinGeckoPrice(symbol: string): Promise<number> {
-    try {
-      const response = await axios.get(`${this.coingeckoBaseUrl}/simple/price`, {
-        params: {
-          ids: symbol.toLowerCase(),
-          vs_currencies: 'usd'
-        },
-        timeout: 3000
-      });
 
-      return response.data[symbol.toLowerCase()].usd;
-    } catch (error: any) {
-      throw new Error(`CoinGecko API failed: ${error.message}`);
-    }
-  }
 
-  /**
-   * Get price from Chainlink Oracle
-   */
-  private async getChainlinkPrice(): Promise<number> {
-    try {
-      const roundData = await this.chainlinkOracle.latestRoundData();
-      return Number(roundData[1]) / Math.pow(10, 8); // 8 decimals
-    } catch (error: any) {
-      logger.warn('Chainlink oracle failed', { error: error.message });
-      throw error;
-    }
-  }
+
 
   /**
    * Calculate real volatility using historical data
@@ -354,7 +275,7 @@ export class RealMarketDataService {
    */
   private async getDexScreenerLiquidity(tokenAddress: string): Promise<number> {
     try {
-      const response = await axios.get(`${this.dexScreenerBaseUrl}/dex/tokens/${tokenAddress}`, {
+      const response = await axios.get(`https://api.dexscreener.com/latest/dex/tokens/${tokenAddress}`, {
         timeout: 3000
       });
 

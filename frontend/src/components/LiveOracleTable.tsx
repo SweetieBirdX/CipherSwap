@@ -1,24 +1,39 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { OracleService } from '../services/oracleService'
+import { OneInchSpotPriceService } from '../services/oneInchSpotPriceService'
 import type { OraclePrice } from '../types/oracle'
 
 interface LiveOracleTableProps {
   className?: string
 }
 
-// Popüler token çiftleri
-const POPULAR_PAIRS = [
-  { chainId: 1, pair: 'ETH/USD', symbol: 'ETH' },
-  { chainId: 1, pair: 'BTC/USD', symbol: 'BTC' },
-  { chainId: 1, pair: 'USDC/USD', symbol: 'USDC' },
-  { chainId: 1, pair: 'USDT/USD', symbol: 'USDT' },
-  { chainId: 1, pair: 'DAI/USD', symbol: 'DAI' },
-  { chainId: 137, pair: 'MATIC/USD', symbol: 'MATIC' },
-  { chainId: 137, pair: 'WETH/USD', symbol: 'WETH' },
-  { chainId: 10, pair: 'OP/USD', symbol: 'OP' },
-  { chainId: 42161, pair: 'ARB/USD', symbol: 'ARB' },
-  { chainId: 8453, pair: 'ETH/USD', symbol: 'ETH' }
+// Popular tokens with 1inch addresses
+const POPULAR_TOKENS = [
+  { 
+    chainId: 1, 
+    pair: 'ETH/USD', 
+    symbol: 'ETH',
+    address: '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'
+  },
+  { 
+    chainId: 1, 
+    pair: 'BTC/USD', 
+    symbol: 'BTC',
+    address: '0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599'
+  },
+  { 
+    chainId: 1, 
+    pair: 'USDC/USD', 
+    symbol: 'USDC',
+    address: '0xA0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'
+  },
+  { 
+    chainId: 1, 
+    pair: 'USDT/USD', 
+    symbol: 'USDT',
+    address: '0xdAC17F958D2ee523a2206206994597C13D831ec7'
+  }
 ]
 
 export default function LiveOracleTable({ className = '' }: LiveOracleTableProps) {
@@ -29,41 +44,47 @@ export default function LiveOracleTable({ className = '' }: LiveOracleTableProps
   const [selectedChain, setSelectedChain] = useState<string>('all')
   const [selectedToken, setSelectedToken] = useState<string>('all')
 
-  // Fiyatları güncelle
+  // Update prices using 1inch Spot Price API
   const updatePrices = async () => {
     try {
-      const batchRequest = {
-        prices: POPULAR_PAIRS.map(pair => ({
-          chainId: pair.chainId,
-          pair: pair.pair
-        }))
-      }
-
-      const response = await OracleService.getBatchPrices(batchRequest)
+      setLoading(true);
+      setError(null);
       
-      if (response.success && response.data) {
-        // Backend'den gelen data'yı frontend formatına çevir
-        const formattedPrices = response.data.map((item: any) => ({
-          chainId: item.chainId,
-          pair: item.pair,
-          price: item.price || '0',
-          timestamp: item.timestamp || Math.floor(Date.now() / 1000),
-          decimals: item.decimals || 8,
-          feedAddress: item.feedAddress || '0x0000000000000000000000000000000000000000',
-          description: item.description || `${item.pair} Price Feed`
-        }))
+      const addresses = POPULAR_TOKENS.map(token => token.address);
+      console.log('Fetching prices for addresses:', addresses);
+      
+      const response = await OneInchSpotPriceService.getMultipleSpotPrices(addresses);
+      
+      console.log('1inch API response:', response);
+      
+      if (response.success && response.data.prices) {
+        // Convert 1inch data to frontend format
+        const formattedPrices = response.data.prices.map((priceData, index) => {
+          const token = POPULAR_TOKENS[index];
+          return {
+            chainId: token.chainId,
+            pair: token.pair,
+            price: (priceData.price * Math.pow(10, 8)).toString(), // Convert to 8 decimals
+            timestamp: Math.floor(priceData.timestamp / 1000),
+            decimals: 8,
+            feedAddress: priceData.address,
+            description: `${token.pair} Price Feed (1inch)`
+          }
+        });
         
-        setPrices(formattedPrices)
-        setLastUpdate(new Date())
-        setError(null)
+        console.log('Formatted prices:', formattedPrices);
+        setPrices(formattedPrices);
+        setLastUpdate(new Date());
+        setError(null);
       } else {
-        setError(response.error || 'Failed to fetch prices')
+        console.error('Invalid response from 1inch API:', response);
+        setError('Failed to fetch prices from 1inch API - invalid response');
       }
     } catch (err: any) {
-      console.error('Oracle price fetch error:', err)
-      setError(err.message || 'Network error')
+      console.error('1inch price fetch error:', err);
+      setError(err.message || 'Network error');
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
   }
 
@@ -143,7 +164,7 @@ export default function LiveOracleTable({ className = '' }: LiveOracleTableProps
       {/* Header */}
       <div>
         <h2>Live Oracle Prices</h2>
-        <p>Real-time price feeds from Chainlink oracles</p>
+        <p>Real-time price feeds from 1inch Spot Price API</p>
         <div>
           <span>Last updated: {lastUpdate.toLocaleTimeString()}</span>
         </div>
