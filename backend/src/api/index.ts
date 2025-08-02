@@ -6,7 +6,11 @@ import oracleRoutes from './routes/oracleRoutes';
 import slippageRoutes from './routes/slippageRoutes';
 import orderbookRoutes from './routes/orderbookRoutes';
 import rfqRoutes from './routes/rfqRoutes';
+import limitOrderRoutes from './routes/limitOrderRoutes';
+import realTimeSwapRoutes from './routes/realTimeSwapRoutes';
 import docsRoutes from './routes/docsRoutes';
+import realMarketDataRoutes from './routes/realMarketDataRoutes';
+import realOnchainExecutionRoutes from './routes/realOnchainExecutionRoutes';
 
 const apiRouter = Router();
 
@@ -35,6 +39,18 @@ const apiDocs = {
         'POST /swap/simulate': 'Simulate swap transaction',
         'GET /swap/history': 'Get swap history for user',
         'POST /swap/cancel/:id': 'Cancel pending swap transaction'
+      }
+    },
+    'real-time-swap': {
+      base: '/api/real-time-swap',
+      endpoints: {
+        'POST /analyze': 'Real-time swap analysis and recommendations',
+        'POST /execute': 'Execute optimized swap based on analysis',
+        'GET /market-status': 'Get current market conditions and status',
+        'POST /simulate': 'Simulate swap with detailed analysis',
+        'GET /price/:fromToken/:toToken': 'Get real-time price information',
+        'POST /limit-order': 'Create limit order with real-time analysis',
+        'GET /order-status/:orderId': 'Get limit order status'
       }
     },
     predicate: {
@@ -99,6 +115,26 @@ const apiDocs = {
         'GET /rfq/stats': 'Get RFQ statistics',
         'POST /rfq/cleanup': 'Clean up expired RFQ data'
       }
+    },
+    limitOrder: {
+      base: '/api/limit-order',
+      endpoints: {
+        'POST /limit-order/create': 'Create a basic limit order',
+        'GET /limit-order/:orderId': 'Get order by ID',
+        'GET /limit-order/user/:userAddress': 'Get user orders',
+        'DELETE /limit-order/:orderId': 'Cancel order',
+        'GET /limit-order/:orderId/status': 'Get order status',
+        'POST /limit-order/conditional': 'Create conditional order',
+        'POST /limit-order/dynamic-pricing': 'Create dynamic pricing order',
+        'POST /limit-order/:orderId/execute-strategy': 'Execute custom strategy',
+        'POST /limit-order/:orderId/execute': 'Execute order onchain',
+        'POST /limit-order/:orderId/cancel-onchain': 'Cancel order onchain',
+        'GET /limit-order/transaction/:txHash/status': 'Get transaction status',
+        'GET /limit-order/orderbook/stats': 'Get orderbook statistics',
+        'GET /limit-order/orderbook/active': 'Get active orders',
+        'POST /limit-order/orderbook/cleanup': 'Cleanup expired orders',
+        'POST /limit-order/:orderId/estimate-gas': 'Estimate gas for execution'
+      }
     }
   },
         features: [
@@ -113,7 +149,11 @@ const apiDocs = {
         'Off-chain Orderbook',
         'Resolver Bot Whitelist',
         'MEV-Protected Order Execution',
-        'Request for Quote (RFQ) System'
+        'Request for Quote (RFQ) System',
+        'Custom Limit Order Strategies',
+        'Onchain Order Execution',
+        'Conditional Order Logic',
+        'Dynamic Pricing Algorithms'
       ],
   chains: [1, 137, 42161, 8453, 324], // Ethereum, Polygon, Arbitrum, Base, zkSync
   hackathon: 'ETHGlobal Unite DeFi'
@@ -147,14 +187,18 @@ apiRouter.use('/oracle', oracleRoutes);
 apiRouter.use('/slippage', slippageRoutes);
 apiRouter.use('/orderbook', orderbookRoutes);
 apiRouter.use('/rfq', rfqRoutes);
+apiRouter.use('/limit-order', limitOrderRoutes);
+apiRouter.use('/real-time-swap', realTimeSwapRoutes);
+apiRouter.use('/market-data', realMarketDataRoutes);
+apiRouter.use('/onchain-execution', realOnchainExecutionRoutes);
 
 // API Stats endpoint
 apiRouter.get('/stats', (req, res) => {
   res.json({
     success: true,
           data: {
-        totalEndpoints: 49,
-        activeServices: ['quote', 'swap', 'predicate', 'oracle', 'slippage', 'orderbook', 'rfq'],
+        totalEndpoints: 64,
+        activeServices: ['quote', 'swap', 'predicate', 'oracle', 'slippage', 'orderbook', 'rfq', 'limit-order'],
         supportedChains: apiDocs.chains,
         features: apiDocs.features,
         uptime: process.uptime(),
