@@ -20,9 +20,13 @@ export interface QuoteData {
   estimatedGas: string;
   slippage: number;
   priceImpact: number;
-  estimatedGains: number;
+  estimatedGains: string; // Changed from number to string
   route: RouteStep[];
+  protocol: string; // 1inch aggregation protocol
+  routeSteps: number; // Number of steps in the route
   timestamp: number;
+  toTokenAmount?: string; // Amount of tokens you will receive
+  toTokenDecimals?: number; // Decimals of the destination token
 }
 
 export interface RouteStep {
@@ -96,8 +100,8 @@ export enum QuoteErrorCodes {
 // Constants
 export const QUOTE_CONSTANTS = {
   MAX_SLIPPAGE: 50, // 50%
-  MIN_AMOUNT: '1000000000000000', // 0.001 ETH in wei
-  MAX_AMOUNT: '1000000000000000000000000', // 1M ETH in wei
+  MIN_AMOUNT: '0.0001', // 0.0001 ETH
+  MAX_AMOUNT: '1000000', // 1M ETH
   DEFAULT_SLIPPAGE: 0.5, // 0.5%
   QUOTE_CACHE_DURATION: 30000, // 30 seconds
   MAX_QUOTE_HISTORY: 100

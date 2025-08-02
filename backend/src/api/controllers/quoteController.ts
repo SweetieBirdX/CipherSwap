@@ -194,6 +194,100 @@ export class QuoteController {
       });
     }
   }
+
+  /**
+   * POST /api/quote/multiple - Get multiple quotes for analysis
+   */
+  async getMultipleQuotes(req: Request, res: Response): Promise<void> {
+    try {
+      const { fromToken, amount, chainId, slippage, userAddress } = req.body;
+      
+      logger.info('Multiple quotes request received', { 
+        fromToken, 
+        amount, 
+        chainId,
+        userAddress 
+      });
+      
+      // Validate required parameters
+      if (!fromToken || !amount || !chainId || !userAddress) {
+        res.status(400).json({
+          success: false,
+          error: 'Missing required parameters: fromToken, amount, chainId, userAddress',
+          timestamp: Date.now()
+        });
+        return;
+      }
+      
+      // Create quote request (we'll use a default toToken, service will handle multiple tokens)
+      const quoteRequest: QuoteRequest = {
+        fromToken,
+        toToken: '0xA0b86991c6218b36c1d19d4a2e9eb0ce3606eb48', // USDC as default
+        amount,
+        chainId: parseInt(chainId),
+        slippage: slippage ? parseFloat(slippage) : undefined,
+        userAddress
+      };
+      
+      // Get multiple quotes from service
+      const multipleQuotesResponse = await this.quoteService.getMultipleQuotes(quoteRequest);
+      
+      if (!multipleQuotesResponse.success) {
+        res.status(400).json({
+          success: false,
+          error: multipleQuotesResponse.error,
+          timestamp: Date.now()
+        });
+        return;
+      }
+      
+      // Return successful response
+      const apiResponse: ApiResponse<any> = {
+        success: true,
+        data: multipleQuotesResponse.data,
+        timestamp: Date.now()
+      };
+      
+      res.json(apiResponse);
+      
+    } catch (error: any) {
+      logger.error('Multiple quotes controller error', { 
+        error: error.message, 
+        stack: error.stack 
+      });
+      
+      res.status(500).json({
+        success: false,
+        error: 'Internal server error',
+        timestamp: Date.now()
+      });
+    }
+  }
+
+  /**
+   * Get network analytics
+   */
+  async getNetworkAnalytics(req: Request, res: Response): Promise<void> {
+    try {
+      logger.info('Network analytics request received');
+      
+      const analytics = await this.quoteService.getNetworkAnalytics();
+      
+      res.json({
+        success: true,
+        data: analytics,
+        timestamp: Date.now()
+      });
+      
+    } catch (error: any) {
+      logger.error('Network analytics error', { error: error.message });
+      res.status(500).json({
+        success: false,
+        error: 'Failed to fetch network analytics',
+        timestamp: Date.now()
+      });
+    }
+  }
 }
 
 export default QuoteController; 

@@ -45,7 +45,7 @@ const quoteController = new QuoteController();
  *       500:
  *         description: Server error
  */
-router.post('/quote', quoteController.getQuote.bind(quoteController));
+router.post('/', quoteController.getQuote.bind(quoteController));
 
 /**
  * @swagger
@@ -75,7 +75,7 @@ router.post('/quote', quoteController.getQuote.bind(quoteController));
  *       400:
  *         description: Invalid parameters
  */
-router.post('/quote/simulate', quoteController.simulateSwap.bind(quoteController));
+router.post('/simulate', quoteController.simulateSwap.bind(quoteController));
 
 /**
  * @swagger
@@ -93,7 +93,7 @@ router.post('/quote/simulate', quoteController.simulateSwap.bind(quoteController
  *       200:
  *         description: Quote history
  */
-router.get('/quote/history', quoteController.getQuoteHistory.bind(quoteController));
+router.get('/history', quoteController.getQuoteHistory.bind(quoteController));
 
 /**
  * @swagger
@@ -111,6 +111,61 @@ router.get('/quote/history', quoteController.getQuoteHistory.bind(quoteControlle
  *       200:
  *         description: List of supported tokens
  */
-router.get('/quote/tokens', quoteController.getSupportedTokens.bind(quoteController));
+router.get('/tokens', quoteController.getSupportedTokens.bind(quoteController));
+
+/**
+ * @swagger
+ * /api/quote/analytics:
+ *   get:
+ *     summary: Get network analytics and gas prices
+ *     tags: [Quotes]
+ *     responses:
+ *       200:
+ *         description: Network analytics data
+ */
+router.get('/analytics', quoteController.getNetworkAnalytics.bind(quoteController));
+
+/**
+ * @swagger
+ * /api/quote/multiple:
+ *   post:
+ *     summary: Get multiple quotes for different tokens and strategies
+ *     tags: [Quotes]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - fromToken
+ *               - amount
+ *               - chainId
+ *               - userAddress
+ *             properties:
+ *               fromToken:
+ *                 type: string
+ *                 description: Source token address
+ *               amount:
+ *                 type: string
+ *                 description: Amount to swap (in ETH)
+ *               chainId:
+ *                 type: number
+ *                 description: Chain ID (e.g., 1 for Ethereum mainnet)
+ *               userAddress:
+ *                 type: string
+ *                 description: User's wallet address
+ *               slippage:
+ *                 type: number
+ *                 description: Maximum allowed slippage (optional)
+ *     responses:
+ *       200:
+ *         description: Multiple quotes analysis
+ *       400:
+ *         description: Invalid parameters
+ *       500:
+ *         description: Server error
+ */
+router.post('/multiple', quoteController.getMultipleQuotes.bind(quoteController));
 
 export default router; 

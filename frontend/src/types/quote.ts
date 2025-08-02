@@ -19,9 +19,13 @@ export interface QuoteData {
   estimatedGas: string
   slippage: number
   priceImpact: number
-  estimatedGains: number
+  estimatedGains: string // Changed from number to string
   route: RouteStep[]
+  protocol: string // 1inch aggregation protocol
+  routeSteps: number // Number of steps in the route
   timestamp: number
+  toTokenAmount?: string // Amount of tokens you will receive
+  toTokenDecimals?: number // Decimals of the destination token
 }
 
 export interface RouteStep {
