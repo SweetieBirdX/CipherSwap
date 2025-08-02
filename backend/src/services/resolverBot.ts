@@ -226,11 +226,11 @@ export class ResolverBot {
   }
 
   /**
-   * Order'ı fill et
+   * Order'ı fill et - Gerçek onchain execution
    */
   private async fillOrder(order: any): Promise<{ success: boolean; data?: any; error?: string }> {
     try {
-      logger.info('Attempting to fill order', {
+      logger.info('Attempting to fill order onchain', {
         orderId: order.orderId,
         fromToken: order.fromToken,
         toToken: order.toToken,
@@ -238,27 +238,54 @@ export class ResolverBot {
         service: 'cipherswap-resolver-bot'
       });
 
-      // Bu kısım gerçek 1inch RFQ contract'ı ile entegre edilecek
-      // Şimdilik mock implementation
-      const mockTxHash = `0x${Math.random().toString(16).substr(2, 64)}`;
+      // Import OnchainExecutionService
+      const { OnchainExecutionService } = await import('./onchainExecutionService');
+      const onchainService = new OnchainExecutionService();
+
+      // Execute order onchain
+      const executionResult = await onchainService.executeLimitOrderOnchain({
+        orderId: order.orderId,
+        userAddress: order.userAddress,
+        gasPrice: undefined, // Use network gas price
+        gasLimit: undefined, // Use estimated gas limit
+        maxPriorityFeePerGas: undefined, // Use network priority fee
+        maxFeePerGas: undefined // Use network max fee
+      });
+
+      if (!executionResult.success) {
+        throw new Error(executionResult.error);
+      }
+
+      const executedOrder = executionResult.data!;
       
       // Order status'u güncelle
       await this.orderbookService.updateOrderStatus(
         order.orderId,
-        'filled' as any,
+        'executed' as any,
         {
           executedBy: this.wallet.address,
-          executionTxHash: mockTxHash,
-          executionTimestamp: Date.now()
+          executionTxHash: executedOrder.txHash,
+          executionTimestamp: Date.now(),
+          gasUsed: executedOrder.gasEstimate,
+          gasPrice: executedOrder.gasPrice
         }
       );
+
+      logger.info('Order filled successfully onchain', {
+        orderId: order.orderId,
+        txHash: executedOrder.txHash,
+        gasUsed: executedOrder.gasEstimate,
+        service: 'cipherswap-resolver-bot'
+      });
 
       return {
         success: true,
         data: {
-          hash: mockTxHash,
+          hash: executedOrder.txHash,
           orderId: order.orderId,
-          executedBy: this.wallet.address
+          executedBy: this.wallet.address,
+          gasUsed: executedOrder.gasEstimate,
+          gasPrice: executedOrder.gasPrice
         }
       };
     } catch (error: any) {

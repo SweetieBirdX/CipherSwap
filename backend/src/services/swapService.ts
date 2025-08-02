@@ -1607,11 +1607,11 @@ export class SwapService {
   }
   
   /**
-   * Create a MEV-protected limit order using 1inch Fusion+
+   * Create a custom limit order using 1inch SDK (no official API)
    */
   async createLimitOrder(params: LimitOrderRequest): Promise<LimitOrderResponse> {
     try {
-      logger.info('Creating MEV-protected limit order', { 
+      logger.info('Creating custom limit order with SDK', { 
         params: {
           fromToken: params.fromToken,
           toToken: params.toToken,
@@ -1623,7 +1623,7 @@ export class SwapService {
           deadline: params.deadline
         },
         timestamp: Date.now(),
-        service: 'cipherswap-api'
+        service: 'cipherswap-custom-limit-order'
       });
       
       // Validate limit order request
@@ -1637,7 +1637,7 @@ export class SwapService {
             userAddress: params.userAddress
           },
           timestamp: Date.now(),
-          service: 'cipherswap-api'
+          service: 'cipherswap-custom-limit-order'
         });
         return {
           success: false,
@@ -1645,92 +1645,35 @@ export class SwapService {
         };
       }
       
-      logger.info('Limit order validation passed, getting Fusion+ quote', {
-        fromToken: params.fromToken,
-        toToken: params.toToken,
-        amount: params.amount,
-        chainId: params.chainId,
-        timestamp: Date.now(),
-        service: 'cipherswap-api'
-      });
+      // Import SDK service
+      const { LimitOrderSDKService } = await import('./limitOrderSDKService');
+      const sdkService = new LimitOrderSDKService();
       
-      // Get Fusion+ quote first
-      const quoteResponse = await this.getFusionQuote({
-        fromToken: params.fromToken,
-        toToken: params.toToken,
-        amount: params.amount,
-        chainId: params.chainId,
-        userAddress: params.userAddress,
-        limitPrice: params.limitPrice,
-        orderType: params.orderType
-      });
+      // Create limit order using SDK (no official API)
+      const sdkResponse = await sdkService.createLimitOrder(params);
       
-      if (!quoteResponse.success) {
-        logger.error('Fusion+ quote failed for limit order', {
-          error: quoteResponse.error,
+      if (!sdkResponse.success) {
+        logger.error('SDK limit order creation failed', {
+          error: sdkResponse.error,
           params: {
             fromToken: params.fromToken,
             toToken: params.toToken,
             userAddress: params.userAddress
           },
           timestamp: Date.now(),
-          service: 'cipherswap-api'
+          service: 'cipherswap-custom-limit-order'
         });
         return {
           success: false,
-          error: quoteResponse.error
+          error: sdkResponse.error
         };
       }
       
-      logger.info('Fusion+ quote received, creating limit order', {
-        quoteData: quoteResponse.data,
-        params: {
-          fromToken: params.fromToken,
-          toToken: params.toToken,
-          amount: params.amount,
-          limitPrice: params.limitPrice,
-          orderType: params.orderType
-        },
-        timestamp: Date.now(),
-        service: 'cipherswap-api'
-      });
+      // Store order in custom system (no official API dependency)
+      this.limitOrderHistory.set(sdkResponse.data!.orderId, sdkResponse.data!);
       
-      // Create Fusion+ limit order
-      const response: AxiosResponse = await axios.post(`${this.baseUrl}/fusion/v1.0/order`, {
-        src: params.fromToken,
-        dst: params.toToken,
-        amount: params.amount,
-        from: params.userAddress,
-        limitPrice: params.limitPrice,
-        orderType: params.orderType, // 'buy' or 'sell'
-        deadline: params.deadline || Math.floor(Date.now() / 1000) + SWAP_CONSTANTS.DEFAULT_DEADLINE,
-        permit: params.permit,
-        chain: params.chainId,
-        apiKey: this.apiKey
-      }, {
-        headers: {
-          'Authorization': `Bearer ${this.apiKey}`,
-          'Accept': 'application/json',
-          'Content-Type': 'application/json'
-        },
-        timeout: 20000 // 20 second timeout for limit orders
-      });
-      
-      logger.info('Fusion+ API response received', {
-        status: response.status,
-        orderId: response.data?.orderId,
-        timestamp: Date.now(),
-        service: 'cipherswap-api'
-      });
-      
-      // Format limit order data
-      const orderData = this.formatLimitOrderResponse(response.data, params, quoteResponse.data);
-      
-      // Store order data
-      this.limitOrderHistory.set(orderData.orderId, orderData);
-      
-      logger.info('MEV-protected limit order created successfully', { 
-        orderId: orderData.orderId,
+      logger.info('Custom limit order created successfully', { 
+        orderId: sdkResponse.data!.orderId,
         fromToken: params.fromToken,
         toToken: params.toToken,
         amount: params.amount,
@@ -1738,19 +1681,18 @@ export class SwapService {
         orderType: params.orderType,
         chainId: params.chainId,
         userAddress: params.userAddress,
-        status: orderData.status,
-
+        status: sdkResponse.data!.status,
         timestamp: Date.now(),
-        service: 'cipherswap-api'
+        service: 'cipherswap-custom-limit-order'
       });
       
       return {
         success: true,
-        data: orderData
+        data: sdkResponse.data!
       };
       
     } catch (error: any) {
-      logger.error('MEV-protected limit order creation error', { 
+      logger.error('Custom limit order creation error', { 
         error: error.message, 
         stack: error.stack,
         params: {
@@ -1759,15 +1701,13 @@ export class SwapService {
           userAddress: params.userAddress,
           chainId: params.chainId
         },
-        status: error.response?.status,
-        responseData: error.response?.data,
         timestamp: Date.now(),
-        service: 'cipherswap-api'
+        service: 'cipherswap-custom-limit-order'
       });
       
       return {
         success: false,
-        error: this.handleLimitOrderError(error)
+        error: `Custom limit order creation failed: ${error.message}`
       };
     }
   }

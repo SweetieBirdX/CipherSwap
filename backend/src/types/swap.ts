@@ -91,6 +91,11 @@ export interface LimitOrderData {
   timestamp: number;
   route?: RouteStep[];
   fusionData?: FusionData;
+  customData?: any; // Custom strategy data
+  // New fields for SDK implementation
+  signature?: string;
+  createdAt?: string;
+  expiresAt?: string;
 }
 
 export enum LimitOrderStatus {
