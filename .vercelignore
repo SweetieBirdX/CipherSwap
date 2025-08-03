@@ -1,0 +1,34 @@
+# Docker files (not needed for Vercel)
+Dockerfile
+docker-compose.yml
+docker-compose.prod.yml
+.dockerignore
+
+# Environment files (should be set in Vercel dashboard)
+.env
+.env.local
+.env.production
+
+# Logs
+logs/
+*.log
+
+# Node modules (will be installed by Vercel)
+node_modules/
+
+# Git
+.git/
+
+# Documentation
+*.md
+!README.md
+
+# Test files
+**/*.test.ts
+**/*.test.js
+**/test/
+**/tests/
+
+# Development files
+.vscode/
+.idea/ 
