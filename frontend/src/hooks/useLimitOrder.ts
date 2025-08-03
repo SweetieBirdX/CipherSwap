@@ -27,6 +27,8 @@ export function useLimitOrder() {
       const unsignedTx = await limitOrderService.createUnsignedTransaction({
         ...orderParams,
         userAddress: address,
+        chainId: orderParams.chainId || 1,
+        orderType: orderParams.orderType || 'sell',
       })
 
       // 2. User signs transaction in frontend
@@ -34,7 +36,7 @@ export function useLimitOrder() {
         account: address,
         to: unsignedTx.to,
         data: unsignedTx.data,
-        value: unsignedTx.value,
+        value: unsignedTx.value || '0x0',
         gas: unsignedTx.gas,
         gasPrice: unsignedTx.gasPrice,
         nonce: unsignedTx.nonce,

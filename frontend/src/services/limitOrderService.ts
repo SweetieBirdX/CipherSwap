@@ -5,8 +5,10 @@ export interface LimitOrderRequest {
   toToken: string
   amount: string
   limitPrice: string
-  deadline: number
+  deadline?: number
   userAddress: string
+  chainId: number
+  orderType: 'buy' | 'sell'
 }
 
 export interface LimitOrderResponse {
@@ -14,7 +16,18 @@ export interface LimitOrderResponse {
   data?: {
     orderId: string
     txHash?: string
-    status: 'pending' | 'executed' | 'failed'
+    status: 'pending' | 'executed' | 'failed' | 'cancelled' | 'expired'
+    fromToken?: string
+    toToken?: string
+    fromAmount?: string
+    toAmount?: string
+    limitPrice?: string
+    orderType?: 'buy' | 'sell'
+    gasEstimate?: string
+    gasPrice?: string
+    deadline?: number
+    userAddress?: string
+    timestamp?: number
   }
   error?: string
 }
@@ -29,22 +42,25 @@ export class FrontendLimitOrderService {
   /**
    * Create unsigned transaction for limit order
    */
-  async createUnsignedTransaction(order: LimitOrderRequest): Promise<any> {
+  async createUnsignedTransaction(order: Omit<LimitOrderRequest, 'userAddress'> & { userAddress: string }): Promise<any> {
     try {
+      // Always include chainId and orderType
+      const payload = {
+        ...order,
+        chainId: order.chainId || 1,
+        orderType: order.orderType || 'sell',
+      }
       const response = await fetch(`${this.apiBaseUrl}/api/frontend-limit-orders/create-unsigned`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(order),
+        body: JSON.stringify(payload),
       })
-
       const data = await response.json()
-      
       if (!data.success) {
         throw new Error(data.error || 'Failed to create unsigned transaction')
       }
-
       return data.data
     } catch (error: any) {
       throw new Error(`Failed to create unsigned transaction: ${error.message}`)

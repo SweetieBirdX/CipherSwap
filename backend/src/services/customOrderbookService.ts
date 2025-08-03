@@ -36,12 +36,21 @@ export class CustomOrderbookService {
           chainId: params.chainId,
           userAddress: params.userAddress
         },
+        fullParams: params,
         timestamp: Date.now(),
         service: 'cipherswap-custom-orderbook'
       });
       
       // Validate request
       const validation = this.validateCustomLimitOrderRequest(params);
+      logger.info('Validation result', {
+        isValid: validation.isValid,
+        errors: validation.errors,
+        timestamp: Date.now(),
+        service: 'cipherswap-custom-orderbook'
+      });
+      
+      // Temporarily bypass validation for debugging
       if (!validation.isValid) {
         return {
           success: false,
@@ -531,7 +540,6 @@ export class CustomOrderbookService {
   
   private validateCustomLimitOrderRequest(params: LimitOrderRequest): { isValid: boolean; errors: string[] } {
     const errors: string[] = [];
-    
     // Required fields
     if (!params.fromToken) {
       errors.push('fromToken is required');
@@ -542,7 +550,7 @@ export class CustomOrderbookService {
     if (!params.amount) {
       errors.push('amount is required');
     }
-    if (!params.chainId) {
+    if (params.chainId === undefined || params.chainId === null || params.chainId === '') {
       errors.push('chainId is required');
     }
     if (!params.userAddress) {
@@ -551,10 +559,9 @@ export class CustomOrderbookService {
     if (!params.limitPrice) {
       errors.push('limitPrice is required');
     }
-    if (!params.orderType) {
+    if (params.orderType === undefined || params.orderType === null || params.orderType === '') {
       errors.push('orderType is required');
     }
-    
     // Amount validation
     if (params.amount) {
       const amount = parseFloat(params.amount);
@@ -562,22 +569,18 @@ export class CustomOrderbookService {
         errors.push('Amount must be greater than 0');
       }
     }
-    
     // Price validation
     if (params.limitPrice && parseFloat(params.limitPrice) <= 0) {
       errors.push('Limit price must be greater than 0');
     }
-    
     // Order type validation
     if (params.orderType && !['buy', 'sell'].includes(params.orderType)) {
       errors.push('Order type must be either "buy" or "sell"');
     }
-    
     // Token validation
     if (params.fromToken === params.toToken) {
       errors.push('fromToken and toToken cannot be the same');
     }
-    
     return {
       isValid: errors.length === 0,
       errors
