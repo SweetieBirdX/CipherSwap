@@ -34,6 +34,8 @@ export class FrontendLimitOrderService {
         fromToken: orderParams.fromToken,
         toToken: orderParams.toToken,
         amount: orderParams.amount,
+        chainId: orderParams.chainId,
+        orderType: orderParams.orderType,
         timestamp: Date.now(),
         service: 'cipherswap-frontend-limit-order'
       })
@@ -44,6 +46,12 @@ export class FrontendLimitOrderService {
         chainId: orderParams.chainId || 1, // Default to Ethereum mainnet
         orderType: orderParams.orderType || 'sell' // Default to sell order
       }
+      
+      logger.info('Order request parameters', {
+        orderRequest,
+        timestamp: Date.now(),
+        service: 'cipherswap-frontend-limit-order'
+      })
       
       const orderResponse = await this.orderbookService.createCustomLimitOrder(orderRequest)
       
@@ -57,14 +65,24 @@ export class FrontendLimitOrderService {
       const order = orderResponse.data!
       const orderId = order.orderId
 
-      // For now, return order data without transaction creation
-      // This allows the frontend to work with the order while we implement proper transaction creation
+      // Create unsigned transaction data for frontend signing
+      const unsignedTxData = await this.createLimitOrderTransactionData({
+        ...orderParams,
+        orderId
+      })
+
+      logger.info('Unsigned transaction created successfully', {
+        orderId,
+        to: unsignedTxData.to,
+        timestamp: Date.now(),
+        service: 'cipherswap-frontend-limit-order'
+      })
+
       return {
         success: true,
         data: {
           orderId,
-          order: order,
-          message: 'Order created successfully. Transaction creation coming soon.'
+          ...unsignedTxData
         }
       }
     } catch (error: any) {
@@ -203,7 +221,7 @@ export class FrontendLimitOrderService {
       data,
       value: order.value || '0x0',
       gas: gasEstimate.toString(),
-      gasPrice: gasPrice.gasPrice?.toString() || '20000000000',
+      gasPrice: gasPrice.gasPrice?.toString() || LIMIT_ORDER_CONFIG.GAS.DEFAULT_GAS_PRICE,
       nonce: await this.provider.getTransactionCount(order.userAddress, 'pending'),
       orderId: order.orderId
     }
@@ -213,24 +231,67 @@ export class FrontendLimitOrderService {
    * Encode limit order creation data
    */
   private encodeLimitOrderCreation(order: any): string {
-    // This would encode the actual function call to create the limit order
-    // For now, we'll create a placeholder that can be extended
+    // Using 1inch Limit Order Protocol interface
     const iface = new ethers.Interface([
+      'function fillOrder((address makerAsset, address takerAsset, uint256 makingAmount, uint256 takingAmount, address maker, address taker, uint256 salt, uint256 start, uint256 end, bytes4 makerAssetData, bytes4 takerAssetData, bytes4 getMakerAmount, bytes4 getTakerAmount, bytes4 predicate, bytes4 permit, bytes4 interaction, bytes4 signature)) order, uint256 makingAmount, uint256 takingAmount, uint256 thresholdAmount)'
+    ])
+
+    // Create order structure for 1inch Limit Order Protocol
+    const deadline = order.deadline || Math.floor(Date.now() / 1000) + 3600 // Default to 1 hour from now
+    const salt = Math.floor(Math.random() * 1000000000) // Random salt for uniqueness
+    
+    // Calculate taking amount based on limit price
+    const makingAmount = order.amount || '0'
+    const takingAmount = this.calculateTakingAmount(makingAmount, order.limitPrice)
+    
+    // Create the order structure
+    const orderStruct = {
+      makerAsset: order.fromToken,
+      takerAsset: order.toToken,
+      makingAmount: makingAmount,
+      takingAmount: takingAmount,
+      maker: order.userAddress,
+      taker: '0x0000000000000000000000000000000000000000', // Anyone can fill
+      salt: salt.toString(),
+      start: Math.floor(Date.now() / 1000).toString(),
+      end: deadline.toString(),
+      makerAssetData: '0x', // Default empty data
+      takerAssetData: '0x', // Default empty data
+      getMakerAmount: '0x', // Default empty data
+      getTakerAmount: '0x', // Default empty data
+      predicate: '0x', // Default empty data
+      permit: '0x', // Default empty data
+      interaction: '0x', // Default empty data
+      signature: '0x' // Will be filled by frontend
+    }
+
+    // For now, we'll create a simple order creation transaction
+    // This is a simplified version - in production, you'd want to use the actual 1inch SDK
+    const simpleIface = new ethers.Interface([
       'function createOrder(address makerAsset, address takerAsset, uint256 makingAmount, uint256 takingAmount, address maker, uint256 deadline)'
     ])
 
-    // Ensure we have valid values for all parameters
-    const deadline = order.deadline || Math.floor(Date.now() / 1000) + 3600 // Default to 1 hour from now
-    const amount = order.amount || '0'
-    const limitPrice = order.limitPrice || '0'
-
-    return iface.encodeFunctionData('createOrder', [
+    return simpleIface.encodeFunctionData('createOrder', [
       order.fromToken,
       order.toToken,
-      amount,
-      limitPrice,
+      makingAmount,
+      takingAmount,
       order.userAddress,
       deadline
     ])
+  }
+
+  /**
+   * Calculate taking amount based on limit price
+   */
+  private calculateTakingAmount(makingAmount: string, limitPrice: string): string {
+    const makingAmountNum = parseFloat(makingAmount)
+    const limitPriceNum = parseFloat(limitPrice)
+    
+    // Calculate taking amount: makingAmount * limitPrice
+    // Note: This is a simplified calculation - in production, you'd want to use proper price feeds
+    const takingAmount = makingAmountNum * limitPriceNum
+    
+    return takingAmount.toString()
   }
 } 

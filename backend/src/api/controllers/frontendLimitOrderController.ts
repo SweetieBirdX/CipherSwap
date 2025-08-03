@@ -14,38 +14,13 @@ export class FrontendLimitOrderController {
    */
   async createUnsignedTransaction(req: Request, res: Response) {
     try {
-      const { fromToken, toToken, amount, limitPrice, deadline, userAddress } = req.body
-
-      logger.info('Creating unsigned transaction for limit order', {
-        userAddress,
-        fromToken,
-        toToken,
-        amount,
-        timestamp: Date.now(),
-        service: 'cipherswap-frontend-limit-order'
-      })
-
-      const result = await this.service.createUnsignedTransaction({
-        fromToken,
-        toToken,
-        amount,
-        limitPrice,
-        deadline,
-        userAddress,
-      })
-
+      // Forward all parameters
+      const result = await this.service.createUnsignedTransaction({ ...req.body })
       if (!result.success) {
         return res.status(400).json(result)
       }
-
       res.json(result)
     } catch (error: any) {
-      logger.error('Failed to create unsigned transaction', {
-        error: error.message,
-        timestamp: Date.now(),
-        service: 'cipherswap-frontend-limit-order'
-      })
-
       res.status(500).json({
         success: false,
         error: 'Failed to create unsigned transaction'

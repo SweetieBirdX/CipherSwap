@@ -59,6 +59,8 @@ export default function LimitOrderForm() {
         amount: amountInWei,
         limitPrice: limitPriceInWei,
         deadline: formData.deadline,
+        chainId: 1, // Ethereum mainnet
+        orderType: 'sell' as const, // Default to sell order
       }
       
       console.log('Sending order params:', orderParams)
