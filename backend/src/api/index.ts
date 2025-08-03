@@ -11,6 +11,7 @@ import realTimeSwapRoutes from './routes/realTimeSwapRoutes';
 import docsRoutes from './routes/docsRoutes';
 import realMarketDataRoutes from './routes/realMarketDataRoutes';
 import realOnchainExecutionRoutes from './routes/realOnchainExecutionRoutes';
+import frontendLimitOrderRoutes from './routes/frontendLimitOrderRoutes';
 
 const apiRouter = Router();
 
@@ -191,6 +192,7 @@ apiRouter.use('/limit-order', limitOrderRoutes);
 apiRouter.use('/real-time-swap', realTimeSwapRoutes);
 apiRouter.use('/real-market-data', realMarketDataRoutes);
 apiRouter.use('/onchain-execution', realOnchainExecutionRoutes);
+apiRouter.use('/frontend-limit-orders', frontendLimitOrderRoutes);
 
 // API Stats endpoint
 apiRouter.get('/stats', (req, res) => {

@@ -4,6 +4,7 @@ import { ConnectButton } from '@rainbow-me/rainbowkit'
 import { QuoteService } from '../services/quoteService'
 import type { QuoteRequest } from '../types/quote'
 import type { MultipleQuotesResponse } from '../services/quoteService'
+import LimitOrderForm from './LimitOrderForm'
 
 // Token mapping for Ethereum mainnet
 const TOKEN_ADDRESSES = {
@@ -406,6 +407,15 @@ export default function SwapApp() {
               <div>• <strong>Gas cost:</strong> {formatGasAmount(analysisData.data.tokenQuotes[0]?.estimatedGas || '0')}</div>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Limit Order Section */}
+      {isConnected && (
+        <div style={{ 
+          marginTop: '40px'
+        }}>
+          <LimitOrderForm />
         </div>
       )}
     </div>

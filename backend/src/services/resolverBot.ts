@@ -265,9 +265,8 @@ export class ResolverBot {
         {
           executedBy: this.wallet.address,
           executionTxHash: executedOrder.txHash,
-          executionTimestamp: Date.now(),
-          gasUsed: executedOrder.gasEstimate,
-          gasPrice: executedOrder.gasPrice
+          executionTimestamp: Date.now()
+          // gasUsed and gasPrice removed as they're not in the interface
         }
       );
 
