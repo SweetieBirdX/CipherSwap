@@ -10,7 +10,6 @@ export interface UnsignedTransactionData {
   gas: string
   gasPrice: string
   nonce: number
-  orderId: string
 }
 
 export class FrontendLimitOrderService {
@@ -223,7 +222,6 @@ export class FrontendLimitOrderService {
       gas: gasEstimate.toString(),
       gasPrice: gasPrice.gasPrice?.toString() || LIMIT_ORDER_CONFIG.GAS.DEFAULT_GAS_PRICE,
       nonce: await this.provider.getTransactionCount(order.userAddress, 'pending'),
-      orderId: order.orderId
     }
   }
 

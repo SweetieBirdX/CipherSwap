@@ -550,7 +550,7 @@ export class CustomOrderbookService {
     if (!params.amount) {
       errors.push('amount is required');
     }
-    if (params.chainId === undefined || params.chainId === null || params.chainId === '') {
+    if (params.chainId === undefined || params.chainId === null) {
       errors.push('chainId is required');
     }
     if (!params.userAddress) {
@@ -559,7 +559,7 @@ export class CustomOrderbookService {
     if (!params.limitPrice) {
       errors.push('limitPrice is required');
     }
-    if (params.orderType === undefined || params.orderType === null || params.orderType === '') {
+    if (params.orderType === undefined || params.orderType === null) {
       errors.push('orderType is required');
     }
     // Amount validation
