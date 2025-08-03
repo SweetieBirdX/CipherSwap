@@ -1183,7 +1183,8 @@ export class QuoteService {
         splitSlippage
       });
 
-      return [
+      // Create strategies array with calculated net values
+      const strategies = [
         {
           strategy: 'Standard Swap',
           description: 'Basic token swap with 1inch aggregation',
@@ -1191,7 +1192,7 @@ export class QuoteService {
           slippage: standardSlippage,
           security: standardSecurity,
           netValue: (baseNetValue - standardGas).toString(),
-          rank: 1
+          rank: 0 // Will be assigned dynamically
         },
         {
           strategy: 'MEV Protected',
@@ -1200,7 +1201,7 @@ export class QuoteService {
           slippage: mevSlippage,
           security: mevSecurity,
           netValue: (baseNetValue - mevGas).toString(),
-          rank: 2
+          rank: 0 // Will be assigned dynamically
         },
         {
           strategy: 'Fusion+',
@@ -1209,7 +1210,7 @@ export class QuoteService {
           slippage: fusionSlippage,
           security: fusionSecurity,
           netValue: (baseNetValue - fusionGas).toString(),
-          rank: 3
+          rank: 0 // Will be assigned dynamically
         },
         {
           strategy: 'Split Routing',
@@ -1218,9 +1219,29 @@ export class QuoteService {
           slippage: splitSlippage,
           security: splitSecurity,
           netValue: (baseNetValue - splitGas).toString(),
-          rank: 4
+          rank: 0 // Will be assigned dynamically
         }
       ];
+
+      // Sort strategies by net value (highest first) and assign ranks
+      strategies.sort((a, b) => parseFloat(b.netValue) - parseFloat(a.netValue));
+      strategies.forEach((strategy, index) => {
+        strategy.rank = index + 1;
+      });
+
+      logger.info('Strategy ranking completed', {
+        strategies: strategies.map(s => ({
+          strategy: s.strategy,
+          netValue: s.netValue,
+          gasCost: s.gasCost,
+          rank: s.rank
+        }))
+      });
+
+      // Log comprehensive analysis summary
+      this.logAnalysisSummary(strategies, params);
+
+      return strategies;
 
     } catch (error: any) {
       logger.error('Failed to get real strategy quotes', { error: error.toString() });
@@ -1250,7 +1271,28 @@ export class QuoteService {
       if (response.data && response.data.estimatedGas) {
         const gasInWei = parseFloat(response.data.estimatedGas);
         const gasInEth = gasInWei / Math.pow(10, 18);
-        return gasInEth;
+        
+        // Apply dynamic adjustment based on network conditions
+        const networkAnalytics = await this.getNetworkAnalytics();
+        const networkCongestion = networkAnalytics.networkCongestion;
+        
+        // Adjust gas based on network congestion
+        let adjustedGas = gasInEth;
+        if (networkCongestion > 0.7) {
+          adjustedGas = gasInEth * 1.2; // High congestion: 20% increase
+        } else if (networkCongestion > 0.5) {
+          adjustedGas = gasInEth * 1.1; // Medium congestion: 10% increase
+        } else if (networkCongestion < 0.2) {
+          adjustedGas = gasInEth * 0.95; // Low congestion: 5% decrease
+        }
+        
+        logger.info('Standard Swap gas calculated', {
+          originalGas: gasInEth,
+          adjustedGas,
+          networkCongestion
+        });
+        
+        return adjustedGas;
       }
 
       return 0.012; // Fallback
@@ -1305,10 +1347,30 @@ export class QuoteService {
       // In real implementation, this would call Flashbots API
       const baseGas = await this.getStandardSwapGas(params);
       
-      // MEV protection adds ~25% more gas for bundle submission
-      const mevGas = baseGas * 1.25;
+      // Get current network conditions for dynamic MEV gas calculation
+      const networkAnalytics = await this.getNetworkAnalytics();
+      const networkCongestion = networkAnalytics.networkCongestion;
       
-      logger.info('MEV Protected gas calculated', { baseGas, mevGas });
+      // MEV protection gas varies based on network congestion
+      // Higher congestion = higher MEV risk = higher protection cost
+      let mevMultiplier = 1.25; // Base 25% overhead
+      
+      if (networkCongestion > 0.7) {
+        mevMultiplier = 1.4; // High congestion: 40% overhead
+      } else if (networkCongestion > 0.5) {
+        mevMultiplier = 1.3; // Medium congestion: 30% overhead
+      } else if (networkCongestion < 0.2) {
+        mevMultiplier = 1.15; // Low congestion: 15% overhead
+      }
+      
+      const mevGas = baseGas * mevMultiplier;
+      
+      logger.info('MEV Protected gas calculated', { 
+        baseGas, 
+        mevGas, 
+        networkCongestion, 
+        mevMultiplier 
+      });
       return mevGas;
     } catch (error: any) {
       logger.error('MEV gas estimation failed', { error: error.toString() });
@@ -1410,12 +1472,36 @@ export class QuoteService {
       // TWAP (Time-Weighted Average Price) gas estimation
       const baseGas = await this.getStandardSwapGas(params);
       
+      // Get current network conditions for dynamic split routing calculation
+      const networkAnalytics = await this.getNetworkAnalytics();
+      const networkCongestion = networkAnalytics.networkCongestion;
+      
       // Split routing requires multiple transactions
       // Each split adds gas cost
-      const splitCount = Math.max(2, Math.ceil(parseFloat(params.amount) / 0.01)); // Split based on amount
-      const splitGas = baseGas * splitCount * 1.1; // 10% overhead for coordination
+      const tradeAmount = parseFloat(params.amount);
+      const splitCount = Math.max(2, Math.ceil(tradeAmount / 0.01)); // Split based on amount
       
-      logger.info('Split Routing gas calculated', { baseGas, splitCount, splitGas });
+      // Coordination overhead varies based on network conditions
+      let coordinationOverhead = 1.1; // Base 10% overhead
+      
+      if (networkCongestion > 0.7) {
+        coordinationOverhead = 1.2; // High congestion: 20% overhead
+      } else if (networkCongestion > 0.5) {
+        coordinationOverhead = 1.15; // Medium congestion: 15% overhead
+      } else if (networkCongestion < 0.2) {
+        coordinationOverhead = 1.05; // Low congestion: 5% overhead
+      }
+      
+      const splitGas = baseGas * splitCount * coordinationOverhead;
+      
+      logger.info('Split Routing gas calculated', { 
+        baseGas, 
+        splitCount, 
+        splitGas, 
+        networkCongestion, 
+        coordinationOverhead,
+        tradeAmount 
+      });
       return splitGas;
     } catch (error: any) {
       logger.error('Split routing gas estimation failed', { error: error.toString() });
@@ -1478,7 +1564,8 @@ export class QuoteService {
     const gasCostFusion = 0.000;
     const gasCostSplit = 0.020;
     
-    return [
+    // Create strategies array with calculated net values
+    const strategies = [
       {
         strategy: 'Standard Swap',
         description: 'Basic token swap with 1inch aggregation',
@@ -1486,7 +1573,7 @@ export class QuoteService {
         slippage: standardSlippage,
         security: 'Medium',
         netValue: (baseTokenAmount - gasCostStandard).toString(),
-        rank: 1
+        rank: 0 // Will be assigned dynamically
       },
       {
         strategy: 'MEV Protected',
@@ -1495,7 +1582,7 @@ export class QuoteService {
         slippage: mevSlippage,
         security: 'High',
         netValue: (baseTokenAmount - gasCostMEV).toString(),
-        rank: 2
+        rank: 0 // Will be assigned dynamically
       },
       {
         strategy: 'Fusion+',
@@ -1504,7 +1591,7 @@ export class QuoteService {
         slippage: fusionSlippage,
         security: 'High',
         netValue: (baseTokenAmount - gasCostFusion).toString(),
-        rank: 3
+        rank: 0 // Will be assigned dynamically
       },
       {
         strategy: 'Split Routing',
@@ -1513,9 +1600,29 @@ export class QuoteService {
         slippage: splitSlippage,
         security: 'Medium',
         netValue: (baseTokenAmount - gasCostSplit).toString(),
-        rank: 4
+        rank: 0 // Will be assigned dynamically
       }
     ];
+
+    // Sort strategies by net value (highest first) and assign ranks
+    strategies.sort((a, b) => parseFloat(b.netValue) - parseFloat(a.netValue));
+    strategies.forEach((strategy, index) => {
+      strategy.rank = index + 1;
+    });
+
+    logger.info('Fallback strategy ranking completed', {
+      strategies: strategies.map(s => ({
+        strategy: s.strategy,
+        netValue: s.netValue,
+        gasCost: s.gasCost,
+        rank: s.rank
+      }))
+    });
+
+    // Log comprehensive analysis summary for fallback
+    this.logAnalysisSummary(strategies, params);
+
+    return strategies;
   }
 
   /**
@@ -1539,9 +1646,9 @@ export class QuoteService {
       savings?: string;
     }> = [];
 
-    // Best value token
+    // Best value token (dynamically calculated)
     if (tokenQuotes.length > 0) {
-      const bestToken = tokenQuotes[0];
+      const bestToken = tokenQuotes[0]; // Already sorted by netValue
       const secondBest = tokenQuotes[1];
       
       let savingsPercentage = 0;
@@ -1561,39 +1668,133 @@ export class QuoteService {
       });
     }
 
-    // Lowest slippage
-    const lowestSlippageToken = tokenQuotes.reduce((min, current) => 
-      current.slippage < min.slippage ? current : min
-    );
-    if (lowestSlippageToken) {
+    // Best value strategy (dynamically calculated)
+    if (strategyQuotes.length > 0) {
+      const bestStrategy = strategyQuotes[0]; // Already sorted by netValue
+      const secondBestStrategy = strategyQuotes[1];
+      
+      let strategySavingsPercentage = 0;
+      if (secondBestStrategy) {
+        const bestValue = parseFloat(bestStrategy.netValue);
+        const secondValue = parseFloat(secondBestStrategy.netValue);
+        if (bestValue > 0 && secondValue > 0) {
+          strategySavingsPercentage = ((bestValue - secondValue) / secondValue) * 100;
+        }
+      }
+      
       recommendations.push({
-        type: 'LOWEST_SLIPPAGE',
-        token: lowestSlippageToken.token,
-        reason: `${lowestSlippageToken.token} has the lowest slippage`,
-        savings: `${lowestSlippageToken.slippage}% slippage`
+        type: 'BEST_VALUE',
+        strategy: bestStrategy.strategy,
+        reason: `${bestStrategy.strategy} offers the best net value`,
+        savings: strategySavingsPercentage > 0 ? `${strategySavingsPercentage.toFixed(1)}% better than alternatives` : 'Best option available'
       });
     }
 
-    // Most secure strategy
-    const mostSecureStrategy = strategyQuotes.find(s => s.security === 'High');
-    if (mostSecureStrategy) {
-      recommendations.push({
-        type: 'MOST_SECURE',
-        strategy: mostSecureStrategy.strategy,
-        reason: `${mostSecureStrategy.strategy} provides maximum security`
-      });
+    // Lowest slippage token
+    if (tokenQuotes.length > 0) {
+      const lowestSlippageToken = tokenQuotes.reduce((min, current) => 
+        current.slippage < min.slippage ? current : min
+      );
+      
+      if (lowestSlippageToken) {
+        recommendations.push({
+          type: 'LOWEST_SLIPPAGE',
+          token: lowestSlippageToken.token,
+          reason: `${lowestSlippageToken.token} has the lowest slippage`,
+          savings: `${lowestSlippageToken.slippage.toFixed(2)}% slippage`
+        });
+      }
     }
 
-    // Gasless option
-    const gaslessStrategy = strategyQuotes.find(s => s.gasCost === '0.000');
-    if (gaslessStrategy) {
-      recommendations.push({
-        type: 'GASLESS',
-        strategy: gaslessStrategy.strategy,
-        reason: `${gaslessStrategy.strategy} eliminates gas costs`,
-        savings: `Save ${gaslessStrategy.gasCost} ETH in gas`
-      });
+    // Lowest slippage strategy
+    if (strategyQuotes.length > 0) {
+      const lowestSlippageStrategy = strategyQuotes.reduce((min, current) => 
+        current.slippage < min.slippage ? current : min
+      );
+      
+      if (lowestSlippageStrategy) {
+        recommendations.push({
+          type: 'LOWEST_SLIPPAGE',
+          strategy: lowestSlippageStrategy.strategy,
+          reason: `${lowestSlippageStrategy.strategy} has the lowest slippage`,
+          savings: `${lowestSlippageStrategy.slippage.toFixed(2)}% slippage`
+        });
+      }
     }
+
+    // Most secure strategy (dynamically find highest security)
+    if (strategyQuotes.length > 0) {
+      const securityLevels = ['High', 'Medium', 'Low'];
+      let mostSecureStrategy = null;
+      
+      for (const level of securityLevels) {
+        mostSecureStrategy = strategyQuotes.find(s => s.security === level);
+        if (mostSecureStrategy) break;
+      }
+      
+      if (mostSecureStrategy) {
+        recommendations.push({
+          type: 'MOST_SECURE',
+          strategy: mostSecureStrategy.strategy,
+          reason: `${mostSecureStrategy.strategy} provides maximum security (${mostSecureStrategy.security})`
+        });
+      }
+    }
+
+    // Gasless option (dynamically find gasless strategies)
+    if (strategyQuotes.length > 0) {
+      const gaslessStrategies = strategyQuotes.filter(s => parseFloat(s.gasCost) === 0);
+      
+      if (gaslessStrategies.length > 0) {
+        // If multiple gasless strategies, pick the one with best net value
+        const bestGaslessStrategy = gaslessStrategies[0];
+        
+        recommendations.push({
+          type: 'GASLESS',
+          strategy: bestGaslessStrategy.strategy,
+          reason: `${bestGaslessStrategy.strategy} eliminates gas costs`,
+          savings: `Save ${bestGaslessStrategy.gasCost} ETH in gas`
+        });
+      }
+    }
+
+    // Add dynamic recommendation based on current market conditions
+    if (strategyQuotes.length > 0 && tokenQuotes.length > 0) {
+      const bestStrategy = strategyQuotes[0];
+      const bestToken = tokenQuotes[0];
+      
+      // If Fusion+ is available and has good net value, recommend it
+      const fusionStrategy = strategyQuotes.find(s => s.strategy === 'Fusion+');
+      if (fusionStrategy && parseFloat(fusionStrategy.netValue) > parseFloat(bestStrategy.netValue) * 0.95) {
+        recommendations.push({
+          type: 'GASLESS',
+          strategy: 'Fusion+',
+          reason: 'Fusion+ offers gasless trading with excellent value',
+          savings: '100% gas savings'
+        });
+      }
+      
+      // If MEV Protected has significantly better security, recommend it
+      const mevStrategy = strategyQuotes.find(s => s.strategy === 'MEV Protected');
+      if (mevStrategy && mevStrategy.security === 'High' && parseFloat(mevStrategy.netValue) > parseFloat(bestStrategy.netValue) * 0.9) {
+        recommendations.push({
+          type: 'MOST_SECURE',
+          strategy: 'MEV Protected',
+          reason: 'MEV Protected offers maximum security with good value',
+          savings: 'Enhanced protection against MEV attacks'
+        });
+      }
+    }
+
+    logger.info('Dynamic recommendations generated', {
+      totalRecommendations: recommendations.length,
+      recommendations: recommendations.map(r => ({
+        type: r.type,
+        token: r.token,
+        strategy: r.strategy,
+        reason: r.reason
+      }))
+    });
 
     return recommendations;
   }
@@ -1749,6 +1950,73 @@ export class QuoteService {
     const baseRisk = 0.25;
     const volatility = Math.random() * 0.2; // Random market volatility
     return Math.min(baseRisk + volatility, 1);
+  }
+
+  /**
+   * Log comprehensive analysis summary for debugging and monitoring
+   */
+  private logAnalysisSummary(strategies: any[], params: QuoteRequest): void {
+    const bestStrategy = strategies[0];
+    const worstStrategy = strategies[strategies.length - 1];
+    
+    const analysis = {
+      tradeDetails: {
+        fromToken: params.fromToken,
+        toToken: params.toToken,
+        amount: params.amount,
+        chainId: params.chainId,
+        userAddress: params.userAddress
+      },
+      strategyComparison: {
+        totalStrategies: strategies.length,
+        bestStrategy: {
+          name: bestStrategy.strategy,
+          netValue: bestStrategy.netValue,
+          gasCost: bestStrategy.gasCost,
+          security: bestStrategy.security,
+          rank: bestStrategy.rank
+        },
+        worstStrategy: {
+          name: worstStrategy.strategy,
+          netValue: worstStrategy.netValue,
+          gasCost: worstStrategy.gasCost,
+          security: worstStrategy.security,
+          rank: worstStrategy.rank
+        },
+        valueSpread: parseFloat(bestStrategy.netValue) - parseFloat(worstStrategy.netValue)
+      },
+      allStrategies: strategies.map(s => ({
+        strategy: s.strategy,
+        netValue: s.netValue,
+        gasCost: s.gasCost,
+        security: s.security,
+        rank: s.rank
+      }))
+    };
+    
+    logger.info('Dynamic Analysis Summary', analysis);
+    
+    // Log specific insights
+    if (bestStrategy.strategy === 'Fusion+') {
+      logger.info('Fusion+ selected as best option - gasless advantage', {
+        gasCost: bestStrategy.gasCost,
+        netValue: bestStrategy.netValue
+      });
+    }
+    
+    if (bestStrategy.strategy === 'MEV Protected') {
+      logger.info('MEV Protected selected as best option - security advantage', {
+        security: bestStrategy.security,
+        netValue: bestStrategy.netValue
+      });
+    }
+    
+    if (bestStrategy.strategy === 'Standard Swap') {
+      logger.info('Standard Swap selected as best option - cost efficiency', {
+        gasCost: bestStrategy.gasCost,
+        netValue: bestStrategy.netValue
+      });
+    }
   }
 }
 

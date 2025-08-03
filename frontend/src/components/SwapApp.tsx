@@ -382,7 +382,7 @@ export default function SwapApp() {
                        {formatNetValue(strategyQuote.netValue, 'tokens')}
                      </div>
                      <div style={{ fontSize: '14px', color: '#666' }}>
-                       {formatGasAmount(strategyQuote.gasCost)} • {strategyQuote.security} security
+                       {strategyQuote.gasCost === '0.000' ? '⚡ Gasless' : formatGasAmount(strategyQuote.gasCost)} • {strategyQuote.security} security
                      </div>
                    </div>
                 </div>
@@ -403,8 +403,8 @@ export default function SwapApp() {
             <div style={{ fontSize: '16px', lineHeight: '1.6' }}>
               <div>• <strong>Best token:</strong> {analysisData.data.tokenQuotes[0]?.token}</div>
               <div>• <strong>Best strategy:</strong> {analysisData.data.strategyQuotes[0]?.strategy}</div>
-              <div>• <strong>Net value:</strong> {formatNetValue(analysisData.data.tokenQuotes[0]?.netValue || '0', analysisData.data.tokenQuotes[0]?.token || 'ETH')}</div>
-              <div>• <strong>Gas cost:</strong> {formatGasAmount(analysisData.data.tokenQuotes[0]?.estimatedGas || '0')}</div>
+              <div>• <strong>Net value:</strong> {formatNetValue(analysisData.data.strategyQuotes[0]?.netValue || '0', analysisData.data.tokenQuotes[0]?.token || 'ETH')}</div>
+              <div>• <strong>Gas cost:</strong> {analysisData.data.strategyQuotes[0]?.gasCost === '0.000' ? '⚡ Gasless (0 ETH)' : formatGasAmount(analysisData.data.strategyQuotes[0]?.gasCost || '0')}</div>
             </div>
           </div>
         </div>
