@@ -22,6 +22,7 @@ export interface OneInchSpotPriceResponse {
   success: boolean;
   data: OneInchSpotPriceData;
   timestamp: number;
+  error?: string;
 }
 
 export interface OneInchMultipleSpotPricesResponse {
@@ -30,12 +31,33 @@ export interface OneInchMultipleSpotPricesResponse {
     prices: OneInchSpotPriceData[];
   };
   timestamp: number;
+  error?: string;
 }
 
 export interface OneInchCurrenciesResponse {
   success: boolean;
   data: OneInchCurrenciesData;
   timestamp: number;
+  error?: string;
+}
+
+export interface OneInchPopularTokensResponse {
+  success: boolean;
+  data: {
+    tokens: Array<{
+      symbol: string;
+      name: string;
+      price: number;
+      change24h: number;
+      volume24h: number;
+      marketCap: number;
+      icon: string;
+      color: string;
+      address: string;
+    }>;
+  };
+  timestamp: number;
+  error?: string;
 }
 
 export class OneInchSpotPriceService {
@@ -107,23 +129,7 @@ export class OneInchSpotPriceService {
   }
 
   // Get popular tokens with market data
-  static async getPopularTokens(): Promise<{
-    success: boolean;
-    data: {
-      tokens: Array<{
-        symbol: string;
-        name: string;
-        price: number;
-        change24h: number;
-        volume24h: number;
-        marketCap: number;
-        icon: string;
-        color: string;
-        address: string;
-      }>;
-    };
-    timestamp: number;
-  }> {
+  static async getPopularTokens(): Promise<OneInchPopularTokensResponse> {
     try {
       // Call the backend's /prices endpoint which includes 1inch integration
       const response = await api.get('/real-market-data/prices');

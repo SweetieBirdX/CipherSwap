@@ -19,7 +19,7 @@ const DocsPage: React.FC = () => {
         pointerEvents: 'none'
       }} />
 
-      {/* Main Content */}
+       {/* Main Content */}
       <div style={{ 
         maxWidth: '1200px', 
         margin: '0 auto', 
@@ -59,7 +59,7 @@ const DocsPage: React.FC = () => {
           </p>
         </div>
 
-        {/* Table of Contents */}
+                 {/* Table of Contents */}
         <div style={{
           backgroundColor: 'rgba(255, 255, 255, 0.95)',
           borderRadius: '16px',
@@ -88,7 +88,7 @@ const DocsPage: React.FC = () => {
               { id: 'api', title: '📡 API Endpoints', color: '#5B7CF7' },
               { id: 'security', title: '🛡️ Security Features', color: '#6495ED' }
             ].map((item) => (
-              <button
+             <button 
                 key={item.id}
                 onClick={() => document.getElementById(item.id)?.scrollIntoView({ behavior: 'smooth' })}
                 style={{
@@ -121,10 +121,10 @@ const DocsPage: React.FC = () => {
                 }}
               >
                 {item.title}
-              </button>
+             </button>
             ))}
-          </div>
-        </div>
+           </div>
+         </div>
 
         {/* Core Features */}
         <section id="features" style={{ marginBottom: 'clamp(40px, 8vw, 60px)' }}>
@@ -258,10 +258,10 @@ const DocsPage: React.FC = () => {
                         ✓
                       </span>
                       {item}
-                    </li>
+                </li>
                   ))}
-                </ul>
-              </div>
+              </ul>
+            </div>
             ))}
           </div>
         </section>
@@ -415,7 +415,7 @@ const DocsPage: React.FC = () => {
                       }}>
                         {endpoint.desc}
                       </span>
-                    </div>
+                </div>
                   ))}
                 </div>
               </div>
@@ -532,10 +532,10 @@ const DocsPage: React.FC = () => {
                         ✓
                       </span>
                       {item}
-                    </li>
+                </li>
                   ))}
-                </ul>
-              </div>
+              </ul>
+            </div>
             ))}
           </div>
         </section>
@@ -588,8 +588,8 @@ const DocsPage: React.FC = () => {
               gap: 'clamp(12px, 2vw, 16px)',
               flexWrap: 'wrap'
             }}>
-              <Link
-                to="/swap"
+            <Link
+              to="/swap"
                 style={{
                   display: 'inline-block',
                   padding: 'clamp(10px, 2vw, 12px) clamp(20px, 4vw, 24px)',
@@ -619,9 +619,9 @@ const DocsPage: React.FC = () => {
                 }}
               >
                 Start Swapping
-              </Link>
-              <Link
-                to="/prices"
+            </Link>
+            <Link
+              to="/prices"
                 style={{
                   display: 'inline-block',
                   padding: 'clamp(10px, 2vw, 12px) clamp(20px, 4vw, 24px)',
@@ -649,13 +649,13 @@ const DocsPage: React.FC = () => {
                 }}
               >
                 View Prices
-              </Link>
+            </Link>
             </div>
           </div>
         </section>
       </div>
 
-      {/* Footer */}
+             {/* Footer */}
       <footer style={{
         backgroundColor: '#2C3E80',
         color: 'white',
@@ -673,8 +673,8 @@ const DocsPage: React.FC = () => {
           }}>
             © 2025 CipherSwap. All rights reserved.
           </p>
-        </div>
-      </footer>
+         </div>
+       </footer>
     </div>
   );
 };

@@ -1,5 +1,5 @@
 import api from './api'
-import type { SwapRequest, SwapResponse, SwapData } from '../types/swap'
+import type { SwapRequest, SwapResponse } from '../types/swap'
 
 export class SwapService {
   // Create normal swap

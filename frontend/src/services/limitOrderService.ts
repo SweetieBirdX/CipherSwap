@@ -1,5 +1,3 @@
-import { LIMIT_ORDER_ABI } from '../constants/abis'
-
 export interface LimitOrderRequest {
   fromToken: string
   toToken: string
