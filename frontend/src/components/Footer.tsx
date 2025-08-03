@@ -90,8 +90,10 @@ export default function Footer() {
             >
               Documentation
             </Link>
-            <Link
-              to="/support"
+            <a
+              href="https://github.com/SweetieBirdX/CipherSwap"
+              target="_blank"
+              rel="noopener noreferrer"
               style={{
                 color: '#E8F2FF',
                 textDecoration: 'none',
@@ -111,7 +113,7 @@ export default function Footer() {
               }}
             >
               Support
-            </Link>
+            </a>
           </div>
         </div>
 
