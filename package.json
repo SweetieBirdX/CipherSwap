@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "DeFi OTC swap platform with MEV protection, multi-DEX routing, RFQ system, and 49+ API endpoints",
   "private": true,
+  "workspaces": ["frontend", "backend"],         
   "scripts": {
     "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
     "dev:backend": "cd backend && npm run dev",
@@ -16,18 +17,13 @@
     "test:frontend": "cd frontend && npm run lint"
   },
   "devDependencies": {
-    "concurrently": "^8.2.2"
+    "concurrently": "^8.2.2",
+   "typescript": "^5.4.0",
+   "@types/node": "^20.11.24",
+    "@vercel/node": "latest"                      
   },
-  "keywords": [
-    "defi",
-    "otc",
-    "swap",
-    "mev-protection",
-    "flashbots",
-    "ethereum",
-    "react",
-    "typescript"
-  ],
+  "keywords": [ "defi", "otc", "swap", "mev-protection",
+                "flashbots", "ethereum", "react", "typescript" ],
   "author": "CipherSwap Team",
   "license": "MIT"
 }
